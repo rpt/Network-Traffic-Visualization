@@ -2,12 +2,12 @@
 
 import sys
 
-def unique(seq, keepstr=True):
-	t = type(seq)
-	if t in (str, unicode):
-		t = (list, ''.join)[bool(keepstr)]
+def unique(list):
 	seen = []
-	return t(c for c in seq if not (c in seen or seen.append(c)))
+	for s in seq:
+		if not s in seen:
+			seen.append(s)
+	return seen
 
 data = sys.stdin.readlines()
 
