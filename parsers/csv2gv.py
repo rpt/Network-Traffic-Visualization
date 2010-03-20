@@ -4,7 +4,7 @@ import sys
 
 def unique(list):
 	seen = []
-	for s in seq:
+	for s in list:
 		if not s in seen:
 			seen.append(s)
 	return seen
