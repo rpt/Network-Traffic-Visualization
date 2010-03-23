@@ -2,8 +2,6 @@
 
 #NOTE: parsers output of tcpdump run with -vttttnel options.
 
-use strict;
-
 our ($tcpdump_version, $output);
 our ($timestamp,$etherproto,$dip,$sip,$ttl,$tos,$id,$offset,$flags,$len,$sourcemac,$destmac,$ipflags,$sport,$dport,$proto,$rest, $dnshostresponse, $dnslookup, $dnsipresponse, $dnstype, $dnslookup);
 
@@ -59,7 +57,20 @@ sub parse_4_1 {
 				die;
 			}
 		} elsif($etherproto eq "ARP") {
-			#Ethernet (len 6), IPv4 (len 4), Request who-has 172.17.76.254 tell 172.17.76.253, length 46
+			if ($parse =~ /Ethernet \(len \d+\), (\S+) \(len \d+\), Request who-has (\S+) tell (\S+), length (\d+)/ ) 
+			{
+				# Ethernet (len 6), IPv4 (len 4), Request who-has 172.17.76.254 tell 172.17.76.253, length 46
+				$netproto = $1 || "";
+				$to       = $2 || "";
+				$from     = $3 || "";
+
+			} elsif ($parse =~ /Ethernet .../) {
+				# Ethernet (len 6), IPv4 (len 4), Reply 172.16.174.253 is-at 00:1c:25:9e:34:50, length 28
+
+			} else {
+				print ">>> ERROR ON LINE\n   $line\n";
+				die;
+			}
 
 		} elsif($etherproto eq "IPv6") {
 
@@ -109,9 +120,9 @@ $tcpdump_version = "4.1";
 $output = $ARGV[0] || "full";
 
 my ($next_line, $process);
-$_ = <>;
+$_ = <STDIN>;
 
-while ($next_line = <>)
+while ($next_line = <STDIN>)
 {
 	chomp;
 	if ($next_line =~ /^\s/) {
