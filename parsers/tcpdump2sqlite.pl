@@ -5,38 +5,153 @@ use strict;
 
 our ($dbh);
 
-sub store
-{
-	my $table = @_[0];
-	my $c = join(", ", map {$dbh->quote_identifier($_)} keys %+);
-	my $v = join(", ", map {$dbh->quote(lc($_))}        values %+);
+our ($line, $line_left, $store_table, %captured);
+sub match_one;
+sub switch_on;
+sub store;
+sub matched;
+sub parse;
+sub ignore_rest;
 
-	#print("insert into $table ($c) values ($v)\n");
-	$dbh->do("insert into $table ($c) values ($v)");
+sub store_in_database
+{
+	my $c = join(", ", map {$dbh->quote_identifier($_)} keys %captured);
+	my $v = join(", ", map {$dbh->quote(lc($_))}        values %captured);
+
+	#print("insert into $store_table ($c) values ($v)\n");
+	$dbh->do("insert into $store_table ($c) values ($v)");
 	if ($dbh->err()) { die "$DBI::errstr\n"; }
 }
 
-sub parse_4_1
+sub match
 {
-	my $packet_eth = '(?<timestamp>\d+-\d+-\d+ \d+:\d+:\d+\.\d+) (?<mac_src>\S+) > (?<mac_dst>\S+), ethertype (?<etherproto>\S+) \(\S+\), length:? (?<length>\d+):?';
-	my $packet_eth_arp = $packet_eth . '\s+' . '(Ethernet \(len \d+\), (?<net_proto>\S+) \(len \d+\), (?<type>Request) who-has (?<addr_to>\S+) tell (?<addr_from>\S+), length \d+)' . '|' .
-		                                   '(Ethernet \(len \d+\), (?<net_proto>\S+) \(len \d+\), (?<type>Reply) (?<addr_from>\S+) is-at (?<mac_from>\S+), length \d+)';
-
-	my %regexps = (
-		packet_eth     => qr/$packet_eth/,
-		packet_eth_arp => qr/$packet_eth_arp/
-	);
-
-	while (my ($table, $regex) = each(%regexps))
-	{
-		store $table if ($_[0] =~ $regex);
+	my $regexp = $_[0];
+	return match_one {
+		$regexp => sub {}
 	}
+}
+
+sub match_one
+{
+	my %regexps = %{$_[0]};
+	while (my ($regex, $action) = each %regexps) {
+		if ($line_left =~ $regex) {
+			@captured{keys %+} = map {lc} values %+;
+
+			$line_left = $';
+			$action->();
+			return 1;
+		}
+	}
+	return 0;
+}
+
+sub ignore_rest
+{
+	$line_left = '';
+}
+
+sub warn_and_ignore_rest
+{
+	if ($line_left ne '') {
+		print STDERR  "ignoring rest of line:\n    $line\nleft part:    $line_left\n\n";
+		ignore_rest;
+	}
+}
+
+sub matched
+{
+	store_in_database;
+}
+
+sub switch_on
+{
+	my $param   = $_[0];
+	my %options = %{$_[1]};
+
+	while (my ($value, $action) = each %options) {
+		if ($captured{$param} eq $value) {
+			$action->();
+			return 1;
+		}
+	}
+	print STDERR  "unhandled switch parameter '$captured{$param}' for line:\n    $line\nleft part:    $line_left\n\n";
+	return 0;
+}
+
+sub store
+{
+	$store_table = @_[0];
 }
 
 sub parse
 {
-	parse_4_1 @_;
+	my ($parser, $string) = @_;
+
+	undef $store_table;
+	$line        = $string;
+	$line_left   = $line;
+	undef %captured;
+
+	#print "parsing:\n";
+	#print "   $line\n";
+
+	$parser->();
+
+	if ($line_left eq '')
+	{
+		matched;
+	} else {
+		print STDERR  "couldn't parse everything from line:\n    $line\nleft part:    $line_left\n\n";
+	}
 }
+
+my $parser_4_1 = sub {
+	my $packet_eth_header = qr/(?<timestamp>\d+-\d+-\d+ \d+:\d+:\d+\.\d+) (?<mac_src>\S+) > (?<mac_dst>\S+),/;
+
+	my $packet_eth        = qr/ethertype (?<ether_proto>(\S| )+?) \(\S+\), length:? (?<length>\d+):?/;
+	my $packet_eth_arp    = qr/Ethernet \(len \d+\), (?<net_proto>\S+) \(len \d+\), (((?<type>Request) who-has (?<addr_to>\S+)(?: \(\S+\))? tell (?<addr_from>\S+), length \d+)|((?<type>Reply) (?<addr_from>\S+) is-at (?<mac_from>\S+), length \d+))/;
+	my $packet_eth_ipv4   = qr/\((?:tos +(\S+), )?(?:ttl +(\d+), )?(?:id +(\d+), )?(?:offset +(\d+), )?(?:flags \[(\S+)\], )?(?:proto (?<trans_proto>\S+).*?, )?(?:length:? (\d+))?.*?\)\s+(?<ip_src>\d+\.\d+\.\d+\.\d+)(?:\.(?<port_src>\d+))? > (?<ip_dst>\d+\.\d+\.\d+\.\d+)(?:\.(?<port_dst>\d+))?:/; 
+
+	match $packet_eth_header || return;
+	store 'packet_eth_others';
+
+	match_one {
+		$packet_eth => sub {
+		store 'packet_eth';
+
+		switch_on 'ether_proto', {
+		'arp' => sub {
+			match_one { $packet_eth_arp => sub {
+				store('packet_eth_arp');
+			}};
+			warn_and_ignore_rest;
+		},
+
+		'ipv4' => sub {
+			match_one { $packet_eth_ipv4 => sub{
+				store('packet_eth_ipv4');
+				switch_on 'trans_proto', {
+				'tcp'  => sub { ignore_rest },
+				'udp'  => sub { ignore_rest },
+				'igmp' => sub { ignore_rest },
+				'icmp' => sub { ignore_rest }
+				}
+			}}
+		},
+
+		'ipv6' => sub {
+			warn_and_ignore_rest;
+	
+		},
+
+		'pppoe d' => sub {
+			ignore_rest;
+		}};
+	}};
+	#warn_and_ignore_rest;
+	ignore_rest;
+};
 
 main:
 {
@@ -56,7 +171,7 @@ main:
 			$process .= $_;
 		} else {
 			$process .= $_;
-			parse $process;
+			parse ($parser_4_1, $process);
 			undef $process;
 		}
 	}
