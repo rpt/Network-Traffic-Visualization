@@ -2,83 +2,136 @@
 
 import sys
 import re
-
-#def unique(list):
-#	seen = []
-#	for s in list:
-#		if not s in seen:
-#			seen.append(s)
-#	return seen
-
-def arp(ip):
-	for node in nodes:
-		if re.search(ip, nodes[node]):
-			return node
+import math
 
 nodes = {}
-edges = {}
-routers = []
+
+class Node:
+	def __init__(self, mac):
+		self.mac = mac
+		self.ips = set()
+		self.edges = {}
+		self.router = False
+	
+	def __str__(self):
+		return '%s' % self.mac
+
+class Edge:
+	def __init__(self, node, src_ip, dst_ip, port):
+		self.src_ip = src_ip
+		self.dst_ip = dst_ip
+		self.port = port
+		self.node = node
+#		self.thickness = 0
+
+	def __str__(self):
+		return '%s -> %s.%s' % (self.src_ip, self.node.mac, self.dst_ip)
+
+	def __eq__(self, other):
+		# TODO Comparing only ips and mac, not port
+		return self.src_ip == other.src_ip and self.dst_ip == other.dst_ip and self.node.mac == other.node.mac
+
+	def __hash__(self):
+		return hash(self.src_ip) + hash(self.dst_ip) + hash(self.node.mac)
+
+#others = new Node('others')
+#nodes['others'] = others
 
 data = sys.stdin.readlines()
+
+print >> sys.stderr, 'Analyzing nodes...'
+
+for line in data:
+#	print >> sys.stderr, ' Line: %s' % line,
+
+	line = line.strip().split(',')
+	mac_src = line[1]
+	mac_dst = line[2]
+	ip_src = line[5]
+	ip_dst = line[6]
+	port_src = line[7]
+	port_dst = line[8]
+
+	if mac_src not in nodes:
+		print >> sys.stderr, '  New source mac found: %s' % mac_src
+		new_node = Node(mac_src)
+		nodes[mac_src] = new_node
+		new_node.ips.add(ip_src)
+	else:
+		nodes[mac_src].ips.add(ip_src)
+
+	# Not adding edges to broadcast and multicast FIXME Other broadcasts
+	filter = re.compile('^(([fF]{2}:){5}[fF]{2}|00:00:00:00:00:00|01:00:5[Ee]:[0-7].:..:..)$')
+	if mac_dst not in nodes and not filter.match(mac_dst):
+		print >> sys.stderr, '  New destination mac found: %s' % mac_dst
+		new_node = Node(mac_dst)
+		new_node.ips.add(ip_dst)
+		nodes[mac_dst] = new_node
+	elif not filter.match(mac_dst):
+		nodes[mac_dst].ips.add(ip_dst)
+
+print >> sys.stderr, 'Searching for routers...'
+
+for mac in nodes:
+	node = nodes[mac]
+	if len(node.ips) > 10:
+		print >> sys.stderr, ' Node %s is a router' % mac
+		node.router = True
+		node.ips.clear()
+		node.ips.add('router')
+
+print >> sys.stderr, 'Analyzing edges...'
+
+for line in data:
+#	print >> sys.stderr, ' Line: %s' % line,
+	line = line.strip().split(',')
+	mac_src = line[1]
+	mac_dst = line[2]
+	ip_src = line[5]
+	ip_dst = line[6]
+	port_src = line[7]
+	port_dst = line[8]
+
+	if nodes.has_key(mac_src) and nodes[mac_src].router is True:
+#		print >> sys.stderr, ' Source node (%s) is a router' % mac_src
+		ip_src = 'router'
+
+	if nodes.has_key(mac_dst) and nodes[mac_dst].router is True:
+#		print >> sys.stderr, ' Destination node (%s) is a router' % mac_dst
+		ip_dst = 'router'
+
+	if nodes.has_key(mac_src) and nodes.has_key(mac_dst):
+		edge = Edge(nodes[mac_dst], ip_src, ip_dst, port_dst)
+
+		if edge in nodes[mac_src].edges:
+#			print >> sys.stderr, ' Edge %s already added' % edge
+			nodes[mac_src].edges[edge] += 1
+		else:
+#			print >> sys.stderr, ' New edge %s found' % edge
+			nodes[mac_src].edges[edge] = 0
 
 print 'digraph foo {'
 print '\tgraph [\n\t\trankdir = "LR"\n\t];'
 print '\tnode [\n\t\tfontsize = "14"\n\t\tshape = "record"\n\t];'
 
-for line in data:
-	line = line.strip().split(',')
-	mac_src = line[1]
-	mac_dst = line[2]
-	ip_src = line[5]
-	ip_dst = line[6]
-	port_dst = line[8]
+for mac in nodes:
+	node = nodes[mac]
 
-	if not nodes.has_key(mac_src):
-		nodes[mac_src] = 'label = "<src> %s| <%s> %s' % (mac_src, ip_src.replace('.',''), ip_src)
-	elif not re.search(ip_src, nodes[mac_src]):
-		nodes[mac_src] += '| <%s> %s' % (ip_src.replace('.',''), ip_src)
+	if len(node.ips) > 0:# and len(node.edges) > 0:
+		print '\t"%s" [' % node.mac
+		print '\t\tlabel = "<mac> %s' % node.mac,
+		for ip in node.ips:
+			print '| <%s> %s' % (ip.replace('.',''), ip),
+		print '"\n\t];'
 
-for node in nodes:
-	if nodes[node].count('|') > 10:
-		nodes[node] = 'label = "<src> %s | <r0> router' % node
-		routers.append(node)
+for mac in nodes:
+	node = nodes[mac]
 
-for line in data:
-	line = line.strip().split(',')
-	mac_src = line[1]
-	mac_dst = line[2]
-	ip_src = line[5]
-	ip_dst = line[6]
-	port_dst = line[8]
-
-	if mac_src in routers:	
-		ip_src = 'r0'
-	if mac_dst in routers:
-		ip_dst = 'r0'
-	edge = ip_src+','+ip_dst#+','+port_dst
-	if not edges.has_key(edge):
-		edges[edge] = 0
-#		print "edge", edge
-	else:
-		edges[edge] += 1	
-#		print 'up!', edge, edges[edge]
-
-for node in nodes:
-	print '\t"%s" [' % node
-	print '\t\t%s"' % nodes[node]
-	print '\t];'
-
-for edge in edges:
-	ips = edge.split(',')
-	ip_src = ips[0]
-	ip_dst = ips[1]
-#	port_dst = ips[2]
-	node_src = arp(ip_src)
-	node_dst = arp(ip_dst)
-	if node_src is not None and node_dst is not None:
-		print '\t"%s":%s -> "%s":%s [' % (node_src, ip_src.replace('.',''), node_dst, ip_dst.replace('.',''))
-#		print '\t\tlabel = "%s"' % port_dst
-#		print '\t\tpenwidth = "%d"' % edges[edge]
-		print '\t];'
+	if len(node.ips) > 0 and len(node.edges) > 0:
+		for edge in node.edges:
+			print '\t"%s":%s -> "%s":%s [' % (mac, edge.src_ip.replace('.',''), edge.node.mac, edge.dst_ip.replace('.',''))
+#			print '\t\tlabel = "%s"' % edge.dst_port
+#			print '\t\tpenwidth = "%f"' % math.log(node.edges[edge])
+			print '\t];'
 
 print '};'
