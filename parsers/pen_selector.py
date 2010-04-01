@@ -32,22 +32,22 @@ def make_buckets(number, list):
 
     return buckets
 
-def pen_selector(value, buckets):
+def i_pen_selector(value, buckets):
     for b in range(len(buckets)):
         if value <= buckets[b][1]:
             return b
     return value-1
 
-def make_pen_selector(number, list):
+def pen_selector(number, list):
     buckets = make_buckets(number, list)
 
-    return lambda x: pen_selector(x, buckets)
+    return lambda x: i_pen_selector(x, buckets)
 
-test1 = make_pen_selector(3, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-test2 = make_pen_selector(3, [1, 1, 2, 2, 5, 5, 8, 9, 10, 11])
+#test1 = make_pen_selector(3, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+#test2 = make_pen_selector(3, [1, 1, 2, 2, 5, 5, 8, 9, 10, 11])
 
-for i in range(11):
-    print i, "->", test1(i)
+#for i in range(11):
+#    print i, "->", test1(i)
 
-for i in range(11):
-    print i, "->", test2(i)
+#for i in range(11):
+#    print i, "->", test2(i)
