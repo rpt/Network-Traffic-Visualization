@@ -76,6 +76,7 @@ sub switch_on
 		}
 	}
 	print STDERR  "unhandled switch parameter '$captured{$param}' for line:\n    $line\nleft part:    $line_left\n\n";
+# schema
 	return 0;
 }
 
@@ -155,7 +156,7 @@ my $parser_4_1 = sub {
 
 main:
 {
-	my $dbfile = $ARGV[1] || "packets.db";
+	my $dbfile = $ARGV[0] || "packets.db";
 
 	my $dbargs = {AutoCommit => 0, PrintError => 1};
 	$dbh = DBI->connect("dbi:SQLite:dbname=$dbfile","","",$dbargs);

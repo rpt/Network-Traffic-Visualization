@@ -2,6 +2,7 @@
 
 import sys
 import sqlite3
+from pen_selector import pen_selector
 
 database = sys.argv[1]
 
@@ -25,6 +26,12 @@ for mac, label in c:
 		print '| <%s> %s' % (ip.replace('.',''), ip),
 	print '"\n\t];'
 
+c.execute('select sum(count) as count from tmp_packets group by mac_src, (case (mac_src in tmp_routers) when 1 then \'router\' else  ip_src end), mac_dst, (case (mac_dst in tmp_routers) when 1 then \'router\' else  ip_dst end);')
+
+counts = map ((lambda x: x[0]), c.fetchall())
+
+pen_width = pen_selector(10, sorted(counts))
+
 c.execute('select mac_src, (case (mac_src in tmp_routers) when 1 then \'router\' else  ip_src end) as ip_src, mac_dst, (case (mac_dst in tmp_routers) when 1 then \'router\' else  ip_dst end) as ip_dst, sum(count) as count from tmp_packets group by mac_src, ip_src, mac_dst, ip_dst;')
 for mac_src, ip_src, mac_dst, ip_dst, count in c:
 
@@ -32,7 +39,7 @@ for mac_src, ip_src, mac_dst, ip_dst, count in c:
 
 	print '\t"%s":%s -> "%s":%s [' % (mac_src, ip_src.replace('.',''), mac_dst, ip_dst.replace('.',''))
 #	print '\t\tlabel = "%s"' % #TODO
-#	print '\t\tpenwidth = "%f"' % #TODO
+	print '\t\tpenwidth = "%f"' % (pen_width(count)+1)
 	print '\t];'
 
 print '};'
