@@ -20,7 +20,10 @@ sub store_in_database
 
 	#print("insert into $store_table ($c) values ($v)\n");
 	$dbh->do("insert into $store_table ($c) values ($v)");
-	if ($dbh->err()) { die "$DBI::errstr\n"; }
+	if ($dbh->err()) { 
+		print("insert into $store_table ($c) values ($v)\n");
+		die "$DBI::errstr\n";
+	}
 }
 
 sub match
@@ -61,7 +64,9 @@ sub warn_and_ignore_rest
 
 sub matched
 {
-	store_in_database;
+	unless (keys %captured == 0) {
+		store_in_database;
+	}
 }
 
 sub switch_on
