@@ -26,17 +26,12 @@ case ${1} in
 			${TCPDUMP} -vttttnel -r "${dump}" |\
 			${PARSER} "${DB}"
 
-			# FIXME tutaj skrypty uruchomić
-			# niech czytają z ${DB} i wrzucają obrazki do
-			# ${DIR}
-			./sqlite2gv.py ${DB} > ${DIR}/tmp-graph.gv
-			./sqlite2gv-ip-port.py ${DB} > ${DIR}/tmp-graph-ip-port.gv
-
+			./sqlite2gv.py -d ${DB} -i -m -o ${DIR}/tmp 
 			ALGO=( dot neato fdp circo twopi )
 
 			for algo in ${ALGO[@]} ; do
-				$algo -Tpng -o ${DIR}/mac-ip-$algo.png ${DIR}/tmp-graph.gv
-				$algo -Tpng -o ${DIR}/ip-port-$algo.png ${DIR}/tmp-graph-ip-port.gv
+				$algo -Tpng -o ${DIR}/mac-ip-$algo.png ${DIR}/tmp-mac-ip.gv
+				$algo -Tpng -o ${DIR}/ip-port-$algo.png ${DIR}/tmp-ip-port.gv
 			done
 		done
 	;;
