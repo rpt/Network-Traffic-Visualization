@@ -21,10 +21,14 @@ case ${1} in
 
 			DB="${DIR}/packets.db"
 
-			${SQLITE} "${DB}" ".read ${DB_SCHEMA}"
+            if [ ${dump} -nt "${DB}" ]; then
+				rm -f ${DB}
+				rm -f ${DB}-journal
+				${SQLITE} "${DB}" ".read ${DB_SCHEMA}"
 
-			${TCPDUMP} -vttttnel -r "${dump}" |\
-			${PARSER} "${DB}"
+				${TCPDUMP} -vttttnel -r "${dump}" |\
+				${PARSER} "${DB}"
+			fi
 
 			./sqlite2gv.py -d ${DB} -i -m -o ${DIR}/tmp 
 			ALGO=( dot neato fdp circo twopi )
