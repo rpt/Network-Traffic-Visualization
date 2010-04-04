@@ -7,10 +7,16 @@ import getopt
 from pen_selector import pen_selector
 
 def color(proto):
-	if proto == "upd":
-		return "darkblue"
+	if proto == "udp":
+		return "blue"
 	elif proto == "tcp":
-		return "darkgreen"
+		return "green"
+	elif proto == "icmp":
+		return "brown"
+	elif proto == "igmp":
+		return "orange"
+	elif proto == "unknown":
+		return "gray"
 	return "black"
 
 try:
@@ -49,8 +55,8 @@ if mac_ip:
 	if output:
 		f = open(output+'-mac-ip.gv', 'w')
 
-	conn.execute("create temporary table tmp_packets_mac_ip as select mac_src, ip_src, mac_dst, ip_dst, count(*) as count from packet_eth_ipv4 where mac_dst is not 'ff:ff:ff:ff:ff:ff' and mac_dst is not '00:00:00:00:00:00' and mac_dst not like '01:00:5e:%' and ip_src is not '0.0.0.0' group by mac_src, ip_src, mac_dst, ip_dst;")
-	conn.execute('create temporary table tmp_routers as select distinct mac from (select mac_dst as mac, count(distinct ip_dst) as c from tmp_packets_mac_ip group by mac union select mac_src as mac, count(distinct ip_src) as c from tmp_packets_mac_ip group by mac) where c >10;')
+	conn.execute("create temporary table tmp_packets_mac_ip as select mac_src, ip_src, mac_dst, ip_dst, count(*) as count, trans_proto from packet_eth_ipv4 where mac_dst is not 'ff:ff:ff:ff:ff:ff' and mac_dst is not '00:00:00:00:00:00' and mac_dst not like '01:00:5e:%' and ip_src is not '0.0.0.0' group by mac_src, ip_src, mac_dst, ip_dst;")
+	conn.execute('create temporary table tmp_routers as select distinct mac from (select mac_dst as mac, count(distinct ip_dst) as c from tmp_packets_mac_ip group by mac union select mac_src as mac, count(distinct ip_src) as c from tmp_packets_mac_ip group by mac) where c > 5;')
 
 	print >> f, 'digraph foo {'
 	print >> f, '\tgraph [\n\t\trankdir = "LR"\n\t\toverlap = "false"\n\t\tsplines = "true"\n\t];'
@@ -63,18 +69,21 @@ if mac_ip:
 		print >> f, '\t\tlabel = "<mac> %s' % mac,
 		for ip in label.split(','):
 			print >> f, '| <%s> %s' % (ip.replace('.',''), ip),
-		print >> f, '"\n\t];'
+		print >> f, '"\n'
+		if label == "router":
+			print >> f, '\n\t\tcolor = "red"'
+		print >> f, '\t];'
 
 	c.execute("select sum(count) as count from tmp_packets_mac_ip group by mac_src, (case (mac_src in tmp_routers) when 1 then 'router' else  ip_src end), mac_dst, (case (mac_dst in tmp_routers) when 1 then 'router' else  ip_dst end);")
 	counts = map ((lambda x: x[0]), c.fetchall())
 	pen_width = pen_selector(10, sorted(counts))
 
-	c.execute("select mac_src, (case (mac_src in tmp_routers) when 1 then 'router' else  ip_src end) as ip_src, mac_dst, (case (mac_dst in tmp_routers) when 1 then 'router' else  ip_dst end) as ip_dst, sum(count) as count from tmp_packets_mac_ip group by mac_src, ip_src, mac_dst, ip_dst;")
-	for mac_src, ip_src, mac_dst, ip_dst, count in c:
+	c.execute("select mac_src, (case (mac_src in tmp_routers) when 1 then 'router' else  ip_src end) as ip_src, mac_dst, (case (mac_dst in tmp_routers) when 1 then 'router' else  ip_dst end) as ip_dst, sum(count) as count, trans_proto from tmp_packets_mac_ip group by mac_src, ip_src, mac_dst, ip_dst;")
+	for mac_src, ip_src, mac_dst, ip_dst, count, proto in c:
 
 		print >> f, '\t"%s":%s -> "%s":%s [' % (mac_src, ip_src.replace('.',''), mac_dst, ip_dst.replace('.',''))
 		print >> f, '\t\tpenwidth = "%f"' % (pen_width(count)+1)
-#		print >> f, '\t\tcolor = "%s"' % color(proto)
+		print >> f, '\t\tcolor = "%s"' % color(proto)
 		print >> f, '\t];'
 
 	print >> f, '};'
@@ -87,10 +96,8 @@ if ip_port:
 
 	print >> f, 'digraph foo {'
 	print >> f, '\tgraph [\n\t\trankdir = "LR"'
-	print >> f, '\t\toverlap = "prism"'
-	print >> f, '\t\tsplines = "spline"'
-	print >> f, '\t\tsep = "+100"'
-	print >> f, '\t\tesep = "+50"'
+	print >> f, '\t\toverlap = "false"'
+	print >> f, '\t\tsplines = "true"'
 	print >> f, '\t];'
 	print >> f, '\tnode [\n\t\tfontsize = "14"\n\t];'
 
