@@ -15,19 +15,18 @@ print 'digraph foo {'
 print '\tgraph [\n\t\trankdir = "LR"\n\t\toverlap = "false"\n\t\tsplines = "true"\n\t];'
 print '\tnode [\n\t\tfontsize = "14"\n\t];'
 
-#c.execute('select sum(count) as count from tmp_packets group by mac_src, (case (mac_src in tmp_routers) when 1 then \'router\' else  ip_src end), mac_dst, (case (mac_dst in tmp_routers) when 1 then \'router\' else  ip_dst end);')
-
-#counts = map ((lambda x: x[0]), c.fetchall())
-#pen_width = pen_selector(10, sorted(counts))
+c.execute('select count from tmp_packets;')
+counts = map ((lambda x: x[0]), c.fetchall())
+pen_width = pen_selector(10, sorted(counts))
 
 c.execute("select ip_src, ip_dst, port_src, port_dst, trans_proto, count, length from tmp_packets;")
 for ip_src, ip_dst, port_src, port_dst, photo, count, length in c:
-	print '\t"%s" [' % ip_src
+#	print '\t"%s" [' % ip_src
 #	print '\t\tlabel = "<mac> %s' % mac,
 #	print '"\n\t];'
-#	print '\t%s -> %s [' % (ip_src, ip_dst)
-#	print '\t\tlabel = "%s"' % port_dst
-#	print '\t\tpenwidth = "%f"' % (pen_width(count)+1)
+	print '\t"%s" -> "%s" [' % (ip_src, ip_dst)
+	print '\t\tlabel = "%s"' % port_dst
+	print '\t\tpenwidth = "%f"' % (pen_width(count)+1)
 	print '\t];'
 
 print '};'
