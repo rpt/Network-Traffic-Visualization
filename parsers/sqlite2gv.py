@@ -6,18 +6,23 @@ import sqlite3
 import getopt
 from pen_selector import pen_selector
 
+ROUTER_IPS = 3		# From how many IPs node is considered a router.
+PEN_WIDTHS = 10	# Number of different penwidths.
+
 def color(proto):
-	if proto == "udp":
-		return "blue"
-	elif proto == "tcp":
-		return "green"
-	elif proto == "icmp":
-		return "brown"
-	elif proto == "igmp":
-		return "orange"
-	elif proto == "unknown":
-		return "gray"
-	return "black"
+	color_map = {	'udp': '#33cc4c',
+						'tcp': '#3366cc',
+						'icmp': '#cc9933',
+						'igmp': '#75581d',
+						'unknown': '#666666',
+						'router': '#cccccc',
+					}
+
+	if proto in color_map:
+		return color_map[proto]
+	else:
+		print >> sys.stderr, 'Unknown proto: %s' % proto
+		return "black"
 
 try:
 	opts, args = getopt.getopt(sys.argv[1:], 'himd:o:', ['help', 'ip-port', 'mac-ip', 'database=', 'output='])
@@ -56,7 +61,7 @@ if mac_ip:
 		f = open(output+'-mac-ip.gv', 'w')
 
 	conn.execute("create temporary table tmp_packets_mac_ip as select mac_src, ip_src, mac_dst, ip_dst, count(*) as count, trans_proto from packet_eth_ipv4 where mac_dst is not 'ff:ff:ff:ff:ff:ff' and mac_dst is not '00:00:00:00:00:00' and mac_dst not like '01:00:5e:%' and ip_src is not '0.0.0.0' group by mac_src, ip_src, mac_dst, ip_dst;")
-	conn.execute('create temporary table tmp_routers as select distinct mac from (select mac_dst as mac, count(distinct ip_dst) as c from tmp_packets_mac_ip group by mac union select mac_src as mac, count(distinct ip_src) as c from tmp_packets_mac_ip group by mac) where c > 5;')
+	conn.execute('create temporary table tmp_routers as select distinct mac from (select mac_dst as mac, count(distinct ip_dst) as c from tmp_packets_mac_ip group by mac union select mac_src as mac, count(distinct ip_src) as c from tmp_packets_mac_ip group by mac) where c >= '+str(ROUTER_IPS)+';')
 
 	print >> f, 'digraph foo {'
 	print >> f, '\tgraph [\n\t\trankdir = "LR"\n\t\toverlap = "false"\n\t\tsplines = "true"\n\t];'
@@ -71,7 +76,8 @@ if mac_ip:
 			print >> f, '| <%s> %s' % (ip.replace('.',''), ip),
 		print >> f, '"\n'
 		if label == "router":
-			print >> f, '\n\t\tcolor = "red"'
+			print >> f, '\n\t\tstyle = "filled"'
+			print >> f, '\n\t\tfillcolor = "%s"' % color('router')
 		print >> f, '\t];'
 
 	c.execute("select sum(count) as count from tmp_packets_mac_ip group by mac_src, (case (mac_src in tmp_routers) when 1 then 'router' else  ip_src end), mac_dst, (case (mac_dst in tmp_routers) when 1 then 'router' else  ip_dst end);")
@@ -103,7 +109,7 @@ if ip_port:
 
 	c.execute('select count from tmp_packets_ip_port;')
 	counts = map ((lambda x: x[0]), c.fetchall())
-	pen_width = pen_selector(10, sorted(counts))
+	pen_width = pen_selector(PEN_WIDTHS, sorted(counts))
 
 	c.execute("select ip_src, ip_dst, port_src, port_dst, trans_proto, count, length from tmp_packets_ip_port;")
 	for ip_src, ip_dst, port_src, port_dst, proto, count, length in c:
