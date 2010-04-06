@@ -5,6 +5,8 @@ use strict;
 
 our ($dbh);
 
+our ($mode_quiet);
+
 our ($line, $line_left, $store_table, %captured);
 sub match_one;
 sub switch_on;
@@ -21,7 +23,7 @@ sub store_in_database
 	#print("insert into $store_table ($c) values ($v)\n");
 	$dbh->do("insert into $store_table ($c) values ($v)");
 	if ($dbh->err()) { 
-		print("insert into $store_table ($c) values ($v)\n");
+		print STDERR ("insert into $store_table ($c) values ($v)\n");
 		die "$DBI::errstr\n";
 	}
 }
@@ -56,7 +58,7 @@ sub ignore_rest
 
 sub warn_and_ignore_rest
 {
-	if ($line_left ne '') {
+	if ($line_left ne '' and not $mode_quiet) {
 		print STDERR  "ignoring rest of line:\n    $line\nleft part:    $line_left\n\n";
 		ignore_rest;
 	}
@@ -80,8 +82,10 @@ sub switch_on
 			return 1;
 		}
 	}
-	print STDERR  "unhandled switch parameter '$captured{$param}' for line:\n    $line\nleft part:    $line_left\n\n";
-# schema
+	unless ($mode_quiet) {
+		print STDERR  "unhandled switch parameter '$captured{$param}' for line:\n    $line\nleft part:    $line_left\n\n";
+	}
+
 	return 0;
 }
 
@@ -108,7 +112,9 @@ sub parse
 	{
 		matched;
 	} else {
-		print STDERR  "couldn't parse everything from line:\n    $line\nleft part:    $line_left\n\n";
+		unless ($mode_quiet) {
+			print STDERR  "couldn't parse everything from line:\n    $line\nleft part:    $line_left\n\n";
+		}
 	}
 }
 
@@ -161,6 +167,11 @@ my $parser_4_1 = sub {
 
 main:
 {
+	if ($ARGV[0] eq "-q") {
+		$mode_quiet = 1;
+		shift @ARGV
+	}
+
 	my $dbfile = $ARGV[0] || "packets.db";
 
 	my $dbargs = {AutoCommit => 0, PrintError => 1};
