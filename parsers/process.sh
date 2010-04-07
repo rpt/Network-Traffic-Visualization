@@ -68,7 +68,7 @@ function do_graphs {
 	do
 		OUTPUT="$(dirname -- ${DB})/tmp"
 		echo -n "Generating graph for ${DB}... "
-		./sqlite2gv.py -d "${DB}" -i -m -o "${OUTPUT}"
+		./sqlite2gv.py -d "${DB}" -i -m --ip-multicast -o "${OUTPUT}"
 		echo "done."
 	done
 }
@@ -90,6 +90,7 @@ function do_draw {
 			do_draw_graph $algo png "${DIR}/tmp-mac-ip.gv" "${DIR}/mac-ip-$algo.png"
 			do_draw_graph $algo png "${DIR}/tmp-ip-port.gv" "${DIR}/ip-port-$algo.png"
 		done
+		do_draw_graph circo png "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast.png"
 	done
 }
 

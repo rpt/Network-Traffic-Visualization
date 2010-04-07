@@ -43,6 +43,11 @@ def pen_selector(number, list):
 
     return lambda x: i_pen_selector(x, buckets)
 
+def ip_multicast(ip):
+    octs = ip.split('.')
+    o1 = int(octs[0])
+    return (224 <= o1) and (o1 <= 239)
+
 #test1 = make_pen_selector(3, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 #test2 = make_pen_selector(3, [1, 1, 2, 2, 5, 5, 8, 9, 10, 11])
 
