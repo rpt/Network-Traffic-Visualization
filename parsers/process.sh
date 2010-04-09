@@ -68,7 +68,7 @@ function do_graphs {
 	do
 		OUTPUT="$(dirname -- ${DB})/tmp"
 		echo -n "Generating graph for ${DB}... "
-		./sqlite2gv.py -d "${DB}" -i -m --ip-multicast -o "${OUTPUT}"
+		./sqlite2gv.py -d "${DB}" -i -m --ip-multicast --nodes-connections -o "${OUTPUT}"
 		echo "done."
 	done
 }
@@ -87,10 +87,13 @@ function do_draw {
 		DIR="$(dirname -- ${DB})"
 		ALGO=( dot neato fdp circo twopi )
 		for algo in ${ALGO[@]} ; do
-			do_draw_graph $algo png "${DIR}/tmp-mac-ip.gv" "${DIR}/mac-ip-$algo.png"
-			do_draw_graph $algo png "${DIR}/tmp-ip-port.gv" "${DIR}/ip-port-$algo.png"
+			do_draw_graph $algo svg "${DIR}/tmp-mac-ip.gv" "${DIR}/mac-ip-$algo.svg"
+			do_draw_graph $algo svg "${DIR}/tmp-ip-port.gv" "${DIR}/ip-port-$algo.svg"
 		done
-		do_draw_graph circo png "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast.png"
+		do_draw_graph circo svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-circo.svg"
+		do_draw_graph twopi svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-twopi.svg"
+		do_draw_graph neato svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-neato.svg"
+        do_draw_graph twopi svg "${DIR}/tmp-nodes-connections.gv" "${DIR}/nodes-connections.svg"
 	done
 }
 
