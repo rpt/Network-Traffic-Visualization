@@ -36,7 +36,7 @@ def i_pen_selector(value, buckets):
     for b in range(len(buckets)):
         if value <= buckets[b][1]:
             return b
-    return value-1
+    return len(buckets)-1
 
 def pen_selector(number, list):
     buckets = make_buckets(number, list)
