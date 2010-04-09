@@ -1,5 +1,41 @@
 #!/usr/bin/env python
 
+def color(proto):
+    color_map = {   'udp': '#33cc4c',
+                    'tcp': '#3366cc',
+                    'icmp': '#cc9933',
+                    'igmp': '#75581d',
+                    'unknown': '#666666',
+                }
+
+    if proto in color_map:
+        return color_map[proto]
+    else:
+        print >> sys.stderr, 'Unknown proto: %s' % proto
+        return "black"
+
+def multiproto_color(counters):
+    tcp    = counters.pop('tcp', 0);
+    udp    = counters.pop('udp', 0);
+    icmp   = counters.pop('icmp', 0);
+    others = sum (counters.values())
+    result = [];
+    if tcp:
+        result.append(color('tcp'))
+    if udp:
+        result.append(color('udp'))
+    if icmp:
+        result.append(color('icmp'))
+    if others:
+        result.append(color('unknown'))
+
+    return reduce(lambda x, y: x+':'+y, result)
+
+def temperature(value):
+    if not (0 <= value <= 1):
+        return None
+    return '#'+hex(int(value*255))[2:]+'0000'
+
 def cheapest_merge(buckets):
     cost = merge_cost(buckets, 0)
     cheapest = 0;
