@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from datetime import datetime
+
 def color(proto):
     color_map = {   'udp': '#33cc4c',
                     'tcp': '#3366cc',
@@ -32,8 +34,8 @@ def multiproto_color(counters):
     return reduce(lambda x, y: x+':'+y, result)
 
 def temperature(value):
-    if not (0 <= value <= 1):
-        return None
+    value = min(value, 1)
+    value = max(value, 0)
     return '#'+hex(int(value*255))[2:]+'0000'
 
 def cheapest_merge(buckets):
@@ -83,6 +85,15 @@ def ip_multicast(ip):
     octs = ip.split('.')
     o1 = int(octs[0])
     return (224 <= o1) and (o1 <= 239)
+
+
+def time_difference(end, start):
+    t1 = datetime.strptime(start, '%Y-%m-%d %H:%M:%S.%f')
+    t2 = datetime.strptime(end, '%Y-%m-%d %H:%M:%S.%f')
+
+    diff = t2-t1;
+
+    return diff.microseconds + 1.0e6 * diff.seconds + 1.0e6 * 60 * 60 * 24 * diff.days
 
 #test1 = make_pen_selector(3, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 #test2 = make_pen_selector(3, [1, 1, 2, 2, 5, 5, 8, 9, 10, 11])

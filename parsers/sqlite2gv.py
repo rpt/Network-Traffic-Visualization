@@ -50,9 +50,6 @@ if mac_ip:
     if output:
         f = open(output+'-mac-ip.gv', 'w')
 
-#    conn.execute("create temporary table tmp_packets_mac_ip as select mac_src, ip_src, mac_dst, ip_dst, count(*) as count, trans_proto from packet_eth_ipv4 where mac_dst is not 'ff:ff:ff:ff:ff:ff' and mac_dst is not '00:00:00:00:00:00' and mac_dst not like '01:00:5e:%' and ip_src is not '0.0.0.0' group by mac_src, ip_src, mac_dst, ip_dst;")
-#    conn.execute('create temporary table tmp_routers as select distinct mac from (select mac_dst as mac, count(distinct ip_dst) as c from tmp_packets_mac_ip group by mac union select mac_src as mac, count(distinct ip_src) as c from tmp_packets_mac_ip group by mac) where c >= 10;')
-
     print >> f, 'digraph foo {'
     print >> f, '\tgraph [ rankdir = "LR" overlap = "scale" splines = "true" ];'
     print >> f, '\tnode [ shape = "Mrecord" ];'
@@ -89,7 +86,6 @@ if ip_port:
     if output:
         f = open(output+'-ip-port.gv', 'w')
 
-#    conn.execute("create temporary table tmp_packets_ip_port as select ip_src, ip_dst, port_src, port_dst, count(*) as count, sum(length) as length, trans_proto from packet_eth_ipv4 where mac_dst is not 'ff:ff:ff:ff:ff:ff' and mac_dst is not '00:00:00:00:00:00' and mac_dst not like '01:00:5e:%' and ip_src is not '0.0.0.0' group by ip_src, ip_dst, port_src, port_dst, trans_proto;")
 
     print >> f, 'digraph foo {'
     print >> f, '\tgraph [ rankdir = "LR" overlap = "scale" splines = "true" ];'
@@ -106,10 +102,10 @@ if ip_port:
     print >> f, '}'
 
 if ip_multicast:
+    # fixme: this uses python function to generate the table. write another script (in python) to create all of these temporary tables...
+    conn.execute("create temporary table tmp_packets_multicast as select ip_src, ip_dst, count(*) as count, sum(length) as length from packet_eth_ipv4 where ip_multicast(ip_dst) group by ip_src, ip_dst;")
     if output:
         f = open(output+'-ip-multicast.gv', 'w')
-
-#    conn.execute("create temporary table tmp_packets_multicast as select ip_src, ip_dst, count(*) as count, sum(length) as length from packet_eth_ipv4 where ip_multicast(ip_dst) group by ip_src, ip_dst;")
 
     c.execute("select sum(length) as length from tmp_packets_multicast group by ip_src")
     counts = map ((lambda x: x[0]), c.fetchall())
@@ -157,11 +153,11 @@ if nodes_connections:
         s = node_size(count)
         print >> f, '"%s" [ width = %s penwidth = %s fontsize = %s ]' % (ip, s/2+1, s/3+1, 6+3*s)
 
-    c.execute("select ip1, ip2, trans_proto, count(*) as count from ( \
-        select ip_src as ip1, ip_dst as ip2, port_src as port1, port_dst as port2, trans_proto from packet_eth_ipv4_unicast \
+    c.execute("select ip1, ip2, trans_proto, count(*) as count, min(timestamp) as start, max(timestamp) as end from ( \
+        select ip_src as ip1, ip_dst as ip2, port_src as port1, port_dst as port2, trans_proto, timestamp from packet_eth_ipv4_unicast \
         where ip_src < ip_dst group by ip_src, ip_dst, port_src, port_dst, trans_proto \
         union \
-        select ip_dst as ip1, ip_src as ip2, port_dst as port1, port_src as port2, trans_proto from packet_eth_ipv4_unicast \
+        select ip_dst as ip1, ip_src as ip2, port_dst as port1, port_src as port2, trans_proto, timestamp from packet_eth_ipv4_unicast \
         where ip_src >= ip_dst group by ip_src, ip_dst, port_src, port_dst, trans_proto) \
         group by ip1, ip2, trans_proto order by ip1, ip2, trans_proto")
 
@@ -178,19 +174,25 @@ if nodes_connections:
     #  ip1, ip3, {tcp:4}
     (lip1, lip2) = (None, None)
     combined = [];
-    for (ip1, ip2, proto, count) in edges:
+    for (ip1, ip2, proto, count, start, end) in edges:
         if (lip1, lip2) != (ip1, ip2):
-            combined.append((ip1, ip2, {proto:count}))
+            combined.append((ip1, ip2, {proto:count}, utilities.time_difference(end, start)))
             (lip1, lip2) = (ip1, ip2)
         else:
             combined[-1][2].update({proto:count})
 
     # generate edges in graph
-    for ip1, ip2, counters in combined:
+    for ip1, ip2, counters, time in combined:
         count  = sum (counters.values())
 
+        intensity = 0
+        # let's assume that 10 connections in short time is an acceptable level
+        if (time > 0 and count > 10):
+            intensity = 15 * count / time;
+
+        #print count, " connections in ", time, " us =>", intensity
         print >> f, '"%s" -- "%s" [penwidth = %s, color = "%s" URL = "#" tooltip = %s]' \
-            % (ip1, ip2, edge_size(count)+1, utilities.multiproto_color(counters), count)
+            % (ip1, ip2, edge_size(count)+1, utilities.temperature(intensity), count)
 
     print >> f, '}'
 
