@@ -12,7 +12,7 @@ pages = [
         ]
 
 def svg(filename):
-    print >> out, '<object id="svg" data="../' + filename + '.svg" />'
+    print >> out, '<object id="svg" data="' + filename + '.svg" />'
 
 def style():
     print >> out, '<style>'
@@ -20,12 +20,13 @@ def style():
     print >> out, '\tul { padding: 0px; margin: 0px; list-style-type: none; }'
     print >> out, '\tli { padding: 0px 10px;  display: inline; }'
     print >> out, '\tobject#svg { height: 90%; }'
+    print >> out, '\th1 { margin: 0px; padding: 0px; }'
     print >> out, '</style>'
 
 def javascript():
     print >> out, '<script>'
     print >> out, 'function click(id){'
-    print >> out, '\tdocument.location = \'htdocs/ip-\' + id + \'.html\';'
+    print >> out, '\tdocument.location = \'ip-\' + id + \'.html\';'
     print >> out, '}'
     print >> out, '</script>'
 
@@ -39,11 +40,12 @@ def menu():
 
 def info(ip):
     print >> out, '<h1>' + ip + '</h1>'
+    print >> out, '<a href="javascript: history.go(-1)">back</a>'
     print >> out, '<hr>'
 
 def header(title, filename):
     global out
-    out = open(dir+'/htdocs/' + filename + '.html', 'w')
+    out = open(dir + '/' + filename + '.html', 'w')
     print >> out, '<html>'
     print >> out, '<head><title>%s</title></head>' % title
 #   print >> out, '<link rel="stylesheet" href="/site_media/style.css" type="text/css" />'
@@ -71,8 +73,8 @@ def create_ip_page(ip):
     footer()
 
 def create_htdocs(ips):
-    if not os.path.isdir(dir+'/htdocs'):
-        os.mkdir(dir+'/htdocs')
+    if not os.path.isdir(dir):
+        os.mkdir(dir)
 
     for filename, title, graphname in pages:
         create_page(filename, title, graphname)
@@ -93,8 +95,6 @@ for o, a in opts:
         dir = a
     else:
         sys.exit(1)
-
-print >> sys.stderr, sys.argv
 
 if not os.path.exists(database):
     print >> sys.stderr, 'No such database file.'
