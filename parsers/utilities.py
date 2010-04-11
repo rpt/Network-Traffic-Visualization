@@ -87,7 +87,7 @@ def ip_multicast(ip):
     return (224 <= o1) and (o1 <= 239)
 
 
-def time_difference(end, start):
+def time_difference(start, end):
     t1 = datetime.strptime(start, '%Y-%m-%d %H:%M:%S.%f')
     t2 = datetime.strptime(end, '%Y-%m-%d %H:%M:%S.%f')
 
