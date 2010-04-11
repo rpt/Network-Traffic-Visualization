@@ -5,6 +5,7 @@ import os
 import sqlite3
 import getopt
 import utilities
+from html import create_htdocs
 
 def graph_nodes_connections(output_count_based, output_length_based):
     def header(f):
@@ -76,7 +77,6 @@ def graph_nodes_connections(output_count_based, output_length_based):
 
     footer(output_count_based)
     footer(output_length_based)
-
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], 'hicnmd:o:', ['help', 'ip-port', 'mac-ip', 'ip-multicast', 'database=', 'output=', 'nodes-connections'])
@@ -154,7 +154,6 @@ if mac_ip:
 if ip_port:
     if output:
         f = open(output+'-ip-port.gv', 'w')
-
 
     print >> f, 'digraph foo {'
     print >> f, '\tgraph [ rankdir = "LR" overlap = "scale" splines = "true" ];'

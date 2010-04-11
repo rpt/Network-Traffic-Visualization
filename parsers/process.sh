@@ -10,12 +10,14 @@ mergeflag=off
 drawflag=off
 graphsflag=off
 databaseflag=off
+htmlflag=off
 
 function usage {
 	echo >&2  "usage: $0 [--merge] file [file ...]"
 	echo >&2  "       $0 --db [--merge] file [file ...]"
 	echo >&2  "       $0 --graphs"
 	echo >&2  "       $0 --draw"
+	echo >&2  "       $0 --html"
 	echo >&2  "       $0 --clean"
 }
 
@@ -105,6 +107,14 @@ function do_draw {
 	done
 }
 
+function do_html {
+	find -name 'packets.db' -print | while read DB
+	do
+		DIR="$(dirname -- ${DB})"
+		./html.py --database "${DB}" --dir "${DIR}"
+	done
+}
+
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--db)
@@ -115,6 +125,8 @@ while [ $# -gt 0 ]; do
 			graphsflag=on;;
 		--draw)
 			drawflag=on;;
+		--html)
+			htmlflag=on;;
 		--clean)
 			cleanflag=on;;
 		--) shift; break;;
@@ -126,10 +138,11 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
-if [ "$graphsflag" == "off" ] && [ "$databaseflag" == "off" ] && [ "$drawflag" == "off" ]; then
+if [ "$graphsflag" == "off" ] && [ "$databaseflag" == "off" ] && [ "$drawflag" == "off" ] && [ "$htmlflag" == "off" ]; then
 	databaseflag=on
 	graphsflag=on
 	drawflag=on
+	htmlflag=on
 fi
 
 if [ $cleanflag == "off" ] && [ "$databaseflag" == "on" ] && [ $# -le 0 ]; then
@@ -153,4 +166,8 @@ fi
 
 if [ $drawflag == "on" ]; then
 	do_draw $@ || exit 1;
+fi
+
+if [ $htmlflag == "on" ]; then
+	do_html $@ || exit 1;
 fi
