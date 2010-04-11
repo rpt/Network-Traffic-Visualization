@@ -98,7 +98,6 @@ function do_draw {
 			do_draw_graph $algo svg "${DIR}/tmp-ip-port.gv" "${DIR}/ip-port-$algo.svg"
 		done
 		do_draw_graph circo svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-circo.svg"
-		do_draw_graph twopi svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-twopi.svg"
 		do_draw_graph neato svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-neato.svg"
 
         do_draw_graph twopi svg "${DIR}/tmp-nodes-connections-count.gv" "${DIR}/nodes-connections-count.svg"

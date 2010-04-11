@@ -82,8 +82,6 @@ try:
     opts, args = getopt.getopt(sys.argv[1:], 'hicnmd:o:', ['help', 'ip-port', 'mac-ip', 'ip-multicast', 'database=', 'output=', 'nodes-connections'])
 except getopt.GetoptError, err:
     print str(err)
-    # FIXME: no such function
-    usage()
     sys.exit(2)
 
 ip_port = False
@@ -108,8 +106,7 @@ for o, a in opts:
     elif o in ('-o', '--output'):
         output = a
     elif o in ('-h', '--help'):
-        usage()
-        sys.exit()
+        sys.exit(2)
 
 if not os.path.exists(database):
     print >> sys.stderr, 'No such database file.'
@@ -187,7 +184,8 @@ if ip_multicast:
 
     c.execute("select ip_src, sum(length) as length from tmp_packets_multicast group by ip_src")
     for ip_src, length in c:
-        print >> f, '"%s" [ width = %s ]' % (ip_src, pen_width(length)+1)
+        s = pen_width(length)
+        print >> f, '"%s" [ width = %s pendiwth = %s fontsize = %s ]' % (ip_src, s/2+1, s/3+1, 6+3*s)
 
     c.execute("select distinct(ip_dst) from tmp_packets_multicast")
     print >> f, '{'
