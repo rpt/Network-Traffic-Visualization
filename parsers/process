@@ -73,14 +73,13 @@ function do_database {
 }
 
 function do_graphs {
-	find -name 'packets.db' -print | while read DB
-	do
-		OUTPUT="$(dirname -- ${DB})/tmp"
-		echo -n "Generating graph for ${DB}... "
-		./sqlite2gv.py -d "${DB}" -i -m --ip-multicast --nodes-connections -o "${OUTPUT}"
-		echo "done."
-	done
+    DB="$1"
+    OUTPUT="$(dirname -- ${DB})/tmp-"
+    echo -n "Generating graph for ${DB}... "
+    ./sqlite2gv.py --database "${DB}" -o "${OUTPUT}"
+    echo "done."
 }
+
 
 function do_draw_graph {
 	if [ "$3" -nt "$4" ]; then
@@ -91,28 +90,39 @@ function do_draw_graph {
 }
 
 function do_draw {
-	find -name 'packets.db' -print | while read DB
-	do
-		DIR="$(dirname -- ${DB})"
-		ALGO=( dot neato fdp circo twopi )
-		for algo in ${ALGO[@]} ; do
-			do_draw_graph $algo svg "${DIR}/tmp-mac-ip.gv" "${DIR}/mac-ip-$algo.svg"
-			do_draw_graph $algo svg "${DIR}/tmp-ip-port.gv" "${DIR}/ip-port-$algo.svg"
-		done
-		do_draw_graph circo svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-circo.svg"
-		do_draw_graph neato svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-neato.svg"
+    DB="$1"
+    DIR="$(dirname -- ${DB})"
+    ALGO=( dot neato fdp circo twopi )
+    for algo in ${ALGO[@]} ; do
+        do_draw_graph $algo svg "${DIR}/tmp-mac-ip.gv" "${DIR}/mac-ip-$algo.svg"
+        do_draw_graph $algo svg "${DIR}/tmp-ip-port.gv" "${DIR}/ip-port-$algo.svg"
+    done
+    do_draw_graph circo svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-circo.svg"
+    do_draw_graph neato svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-neato.svg"
 
-        do_draw_graph twopi svg "${DIR}/tmp-nodes-connections-count.gv" "${DIR}/nodes-connections-count.svg"
-        do_draw_graph twopi svg "${DIR}/tmp-nodes-connections-length.gv" "${DIR}/nodes-connections-length.svg"
-	done
+    do_draw_graph twopi svg "${DIR}/tmp-nodes-connections-count.gv" "${DIR}/nodes-connections-count.svg"
+    do_draw_graph twopi svg "${DIR}/tmp-nodes-connections-length.gv" "${DIR}/nodes-connections-length.svg"
 }
 
 function do_html {
-	find -name 'packets.db' -print | while read DB
-	do
-		DIR="$(dirname -- ${DB})"
-		./html.py --database "${DB}" --dir "${DIR}"
-	done
+    DB="$1"
+    DIR="$(dirname -- ${DB})"
+    ./html.py --database "${DB}" --dir "${DIR}"
+}
+
+function do_foreach_database {
+    FUNCTION="$1"
+    shift
+    if [ $# -gt 0 ]; then
+        for DB in $@; do
+            ${FUNCTION} "${DB}"
+        done
+    else
+        find -name 'packets.db' -print | while read DB
+        do
+            ${FUNCTION} "${DB}"
+        done
+    fi
 }
 
 while [ $# -gt 0 ]; do
@@ -161,13 +171,13 @@ if [ $databaseflag == "on" ]; then
 fi
 
 if [ $graphsflag == "on" ]; then
-	do_graphs $@ || exit 1;
+    do_foreach_database do_graphs $@ || exit 1;
 fi
 
 if [ $drawflag == "on" ]; then
-	do_draw $@ || exit 1;
+    do_foreach_database do_draw $@ || exit 1;
 fi
 
 if [ $htmlflag == "on" ]; then
-	do_html $@ || exit 1;
+    do_foreach_database do_html $@ || exit 1;
 fi
