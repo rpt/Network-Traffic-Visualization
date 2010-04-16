@@ -1,0 +1,128 @@
+body {
+    margin: 0px;
+    padding: 0px;
+    color: #000000;
+    font-size: 16px;
+}
+
+a {
+    color: #666666;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+a:hover {
+    color: #000000;
+}
+
+div#container {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+div#ip {
+    display: none;
+    position: absolute;
+    top: 10%;
+    left: 20%;
+    right: 20%;
+    height: auto;
+    width: 60%;
+    padding: 10px;
+    background-color: #ffffff;
+    color: #000000;
+    -moz-border-radius: 10px;
+    -moz-box-shadow: 0px 0px 10px #ffffff;
+    z-index: 4;
+    opacity: 1.0;
+}
+
+div#ip_stats {
+    margin: 0px;
+    padding: 0px;
+    text-align: center;
+    font-size: 36px;
+}
+
+div#ip_svg_div {
+    display: none;
+}
+
+div#ip_back {
+    display: none;
+    position: fixed;
+    height: 100%;
+    width: 100%;
+    background-color: #000000;
+    opacity: 0.8;
+    z-index: 3;
+}
+
+div#menu {
+    position: absolute;
+    left: 50%;
+    padding: 2px 0px;
+    width: 800px;
+    margin-left: -400px;
+    text-align: center;
+    -moz-border-radius-bottomleft: 10px;
+    -moz-border-radius-bottomright: 10px;
+    -moz-box-shadow: 0px 0px 10px #333333;
+    z-index: 2;
+}
+
+div#svg_frame {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    z-index: 1;
+}
+
+div#zoom {
+    position: fixed;
+    bottom: 50%;
+    margin-bottom: -40px;
+    left: 0px;
+    width: 50;
+    text-align: center;
+    -moz-border-radius-bottomright: 10px;
+    -moz-border-radius-topright: 10px;
+    -moz-box-shadow: 0px 0px 10px #333333;
+    z-index: 2;
+}
+
+div#zoom img {
+    width: 40px;
+    padding: 4px 0px;
+    border: 0px;
+    opacity: 0.5;
+}
+
+div.trans {
+    opacity: 0.5;
+    background-color: #cccccc;
+}
+
+ul {
+    padding: 0px;
+    margin: 0px;
+}
+
+li {
+    padding: 0px 10px;
+    display: inline;
+}
+
+object#svg {
+    position: absolute;
+}
+
+object#ip_svg {
+
+}
+
+h1 {
+    margin: 0px;
+    padding: 0px;
+}
