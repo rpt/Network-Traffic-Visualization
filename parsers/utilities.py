@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 
 from datetime import datetime
+import math
+import sqlite3
+
+def connect(database):
+    conn = sqlite3.connect(database)
+    conn.create_function('ip_multicast', 1, ip_multicast)
+    conn.create_aggregate('burst_intensity', 1, BurstIntensity)
+    return conn
 
 def color(proto):
     color_map = {   'udp': '#33cc4c',
@@ -36,7 +44,9 @@ def multiproto_color(counters):
 def temperature(value):
     value = min(value, 1)
     value = max(value, 0)
-    return '#'+hex(int(value*255))[2:]+'0000'
+    ret = '#%02x0000' % int(value*255)
+    assert (len(ret) == 7)
+    return ret
 
 def cheapest_merge(buckets):
     cost = merge_cost(buckets, 0)
@@ -94,6 +104,43 @@ def time_difference(start, end):
     diff = t2-t1;
 
     return diff.microseconds + 1.0e6 * diff.seconds + 1.0e6 * 60 * 60 * 24 * diff.days
+
+class BurstIntensity:
+    PER_PACKET_INCREASE = 1.0;
+
+    def __init__(self):
+        self.last_time     = None
+        self.current_level = 0.0
+        self.max_level     = 0.0
+
+    def increase_level(self):
+        self.current_level += BurstIntensity.PER_PACKET_INCREASE
+        self.max_level = max(self.max_level, self.current_level)
+
+    def decrese_level(self, diff):
+        # magic numbers... picked up so the one scan we had at the time of
+        # writing this would give nice results
+        self.current_level -= BurstIntensity.PER_PACKET_INCREASE * 0.02 * diff;
+        self.current_level = max(0, self.current_level)
+
+    def step(self, time):
+        if self.last_time is None:
+            self.last_time = time
+            self.increase_level()
+            return
+
+        diff = time_difference(self.last_time, time)
+        assert(diff >= 0)
+
+        self.last_time = time
+        self.decrese_level(diff)
+        self.increase_level()
+    
+    def finalize(self):
+        ret = self.max_level
+        ret = math.log(ret)
+        ret /= 6.66 # evil constant
+        return ret
 
 #test1 = make_pen_selector(3, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 #test2 = make_pen_selector(3, [1, 1, 2, 2, 5, 5, 8, 9, 10, 11])

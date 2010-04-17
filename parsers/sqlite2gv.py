@@ -2,7 +2,6 @@
 
 import sys
 import os
-import sqlite3
 import getopt
 import utilities
 
@@ -28,7 +27,7 @@ class GraphWriter:
     def graph_nodes_connections(self, output_count_based, output_length_based):
         def header(f):
             print >> f, 'graph foo {'
-            print >> f, 'graph [ overlap = "scale" splines = "true" ]'
+            print >> f, 'graph [ overlap = "scale" splines = "true" sep= "0.2" ]'
             print >> f, 'node [ shape = "circle" label = "\N" fixedsize = "true" style = "filled" fillcolor = "white" id = "\N" URL = "javascript:top.click(\'\N\')" ]'
 
         def footer(f):
@@ -62,13 +61,13 @@ class GraphWriter:
 
         # print edges
 
-        c.execute("select ip1, ip2, count(*) as count, sum(length) as length, min(timestamp) as start, max(timestamp) as end from ( \
+        c.execute("select ip1, ip2, count(*) as count, sum(length) as length, burst_intensity(timestamp) as burst from ( \
             select ip_src as ip1, ip_dst as ip2, port_src as port1, port_dst as port2, length, timestamp from packet_eth_ipv4_unicast \
             where ip_src < ip_dst group by ip_src, ip_dst, port_src, port_dst \
             union \
             select ip_dst as ip1, ip_src as ip2, port_dst as port1, port_src as port2, length, timestamp from packet_eth_ipv4_unicast \
-            where ip_src >= ip_dst group by ip_src, ip_dst, port_src, port_dst) \
-            group by ip1, ip2")
+            where ip_src >= ip_dst group by ip_src, ip_dst, port_src, port_dst order by timestamp) \
+            group by ip1, ip2 order by timestamp")
 
         edges = c.fetchall()
 
@@ -79,20 +78,13 @@ class GraphWriter:
         # edge_size_length = utilities.pen_selector(10, sorted(lengths))
 
         # generate edges in graph
-        for ip1, ip2, count, length, start, end in edges:
-            time = utilities.time_difference(start, end)
+        for ip1, ip2, count, length, burst in edges:
 
-            intensity = 0
-            # let's assume that 10 connections in short time is an acceptable level
-            if (time > 0 and count > 10):
-                intensity = 15 * count / time;
-
-            #print count, " connections in ", time, " us =>", intensity
             print >> output_count_based, '"%s" -- "%s" [penwidth = %s, color = "%s" URL = "#" tooltip = %s]' \
-                % (ip1, ip2, edge_size_count(count)+1, utilities.temperature(intensity), count)
+                % (ip1, ip2, edge_size_count(count)+1, utilities.temperature(burst), count)
 
             #print >> output_length_based, '"%s" -- "%s" [penwidth = %s, color = "%s" URL = "#" tooltip = %s]' \
-            #   % (ip1, ip2, edge_size_length(length)+1, utilities.temperature(intensity), count)
+            #   % (ip1, ip2, edge_size_length(length)+1, utilities.temperature(burst), count)
 
         footer(output_count_based)
         #footer(output_length_based)
@@ -245,7 +237,7 @@ def main(argv=None):
         print >> sys.stderr, 'No such database file:', database
         return 2
 
-    conn = sqlite3.connect(database)
+    conn = utilities.connect(database)
 
     gw = GraphWriter(conn, output)
     gw.write_graphs()

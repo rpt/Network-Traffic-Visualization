@@ -22,8 +22,7 @@ if not os.path.exists(database):
     print >> sys.stderr, 'No such database file.'
     sys.exit(1)
 
-conn = sqlite3.connect(database)
-conn.create_function('ip_multicast', 1, utilities.ip_multicast)
+conn = utilities.connect(database)
 
 conn.execute("create table tmp_packets_multicast as select ip_src, ip_dst, count(*) as count, sum(length) as length from packet_eth_ipv4 where ip_multicast(ip_dst) group by ip_src, ip_dst;")
 conn.execute("create table tmp_packets_mac_ip as select mac_src, ip_src, mac_dst, ip_dst, count(*) as count, trans_proto from packet_eth_ipv4 where mac_dst is not 'ff:ff:ff:ff:ff:ff' and mac_dst is not '00:00:00:00:00:00' and mac_dst not like '01:00:5e:%' and ip_src is not '0.0.0.0' group by mac_src, ip_src, mac_dst, ip_dst;")
