@@ -128,16 +128,18 @@ function do_draw {
     DB="$1"
     DIR="$(dirname -- ${DB})"
     ALGO=( dot neato fdp circo twopi )
-    for algo in ${ALGO[@]} ; do
-        do_draw_graph $algo svg "${DIR}/tmp-mac-ip.gv" "${DIR}/mac-ip-$algo.svg"
-        do_draw_graph $algo svg "${DIR}/tmp-ip-port.gv" "${DIR}/ip-port-$algo.svg"
-    done
+
     do_draw_graph circo svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-circo.svg"
     do_draw_graph twopi svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-twopi.svg"
     do_draw_graph neato svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-neato.svg"
 
+    for algo in ${ALGO[@]} ; do
+        # do_draw_graph $algo svg "${DIR}/tmp-mac-ip.gv" "${DIR}/mac-ip-$algo.svg"
+        do_draw_graph $algo svg "${DIR}/tmp-ip-port.gv" "${DIR}/ip-port-$algo.svg"
+    done
+
     do_draw_graph twopi svg "${DIR}/tmp-nodes-connections-count.gv" "${DIR}/nodes-connections-count.svg"
-    do_draw_graph twopi svg "${DIR}/tmp-nodes-connections-length.gv" "${DIR}/nodes-connections-length.svg"
+    # do_draw_graph twopi svg "${DIR}/tmp-nodes-connections-length.gv" "${DIR}/nodes-connections-length.svg"
 }
 
 function do_html {

@@ -16,7 +16,7 @@ class GraphWriter:
         self.graph_ip_multicast( open(self.file_prefix+'ip-multicast.gv', 'w') )
 
 
-        self.graph_mac_ip      ( open(self.file_prefix+'mac-ip.gv', 'w') )
+        # self.graph_mac_ip      ( open(self.file_prefix+'mac-ip.gv', 'w') )
 
         self.graph_nodes_connections(
                                  open(self.file_prefix+'nodes-connections-count.gv', 'w'),
@@ -35,7 +35,7 @@ class GraphWriter:
             print >> f, '}'
 
         header(output_count_based)
-        header(output_length_based)
+        # header(output_length_based)
 
         # print nodes
 
@@ -49,16 +49,16 @@ class GraphWriter:
         nodes = c.fetchall()
 
         counts  = map ((lambda x: x[1]), nodes)
-        lengths = map ((lambda x: x[2]), nodes)
+        # lengths = map ((lambda x: x[2]), nodes)
 
         node_size_count  = utilities.pen_selector(10, sorted(counts))
-        node_size_length = utilities.pen_selector(10, sorted(lengths))
+        # node_size_length = utilities.pen_selector(10, sorted(lengths))
 
         for ip, count, length in nodes:
             s = node_size_count(count)
-            l = node_size_length(length)
+            # l = node_size_length(length)
             print >> output_count_based,  '"%s" [ width = %s penwidth = %s fontsize = %s ]' % (ip, s/2+1, s/3+1, 6+3*s)
-            print >> output_length_based, '"%s" [ width = %s penwidth = %s fontsize = %s ]' % (ip, l/2+1, l/3+1, 6+3*l)
+            # print >> output_length_based, '"%s" [ width = %s penwidth = %s fontsize = %s ]' % (ip, l/2+1, l/3+1, 6+3*l)
 
         # print edges
 
@@ -76,7 +76,7 @@ class GraphWriter:
         lengths = map ((lambda x: x[3]), edges)
 
         edge_size_count  = utilities.pen_selector(10, sorted(counts))
-        edge_size_length = utilities.pen_selector(10, sorted(lengths))
+        # edge_size_length = utilities.pen_selector(10, sorted(lengths))
 
         # generate edges in graph
         for ip1, ip2, count, length, start, end in edges:
@@ -91,11 +91,11 @@ class GraphWriter:
             print >> output_count_based, '"%s" -- "%s" [penwidth = %s, color = "%s" URL = "#" tooltip = %s]' \
                 % (ip1, ip2, edge_size_count(count)+1, utilities.temperature(intensity), count)
 
-            print >> output_length_based, '"%s" -- "%s" [penwidth = %s, color = "%s" URL = "#" tooltip = %s]' \
-                % (ip1, ip2, edge_size_length(length)+1, utilities.temperature(intensity), count)
+            #print >> output_length_based, '"%s" -- "%s" [penwidth = %s, color = "%s" URL = "#" tooltip = %s]' \
+            #   % (ip1, ip2, edge_size_length(length)+1, utilities.temperature(intensity), count)
 
         footer(output_count_based)
-        footer(output_length_based)
+        #footer(output_length_based)
 
 
     def graph_ip_multicast(self, output):
@@ -106,16 +106,16 @@ class GraphWriter:
 
         print >> output, 'graph foo {'
         print >> output, 'graph [ overlap = "scale" splines = "true" ]'
-        print >> output, 'node [ shape = "circle" label="\N" ]'
+        print >> output, 'node [ shape = "circle" label="\N" fixedsize = "true" width="2" ]'
 
-        c.execute("select ip_src, sum(length) as length from tmp_packets_multicast group by ip_src")
-        for ip_src, length in c:
-            s = pen_width(length)
-            print >> output, '"%s" [ width = %s pendiwth = %s fontsize = %s ]' % (ip_src, s/2+1, s/3+1, 6+3*s)
+        #c.execute("select ip_src, sum(length) as length from tmp_packets_multicast group by ip_src")
+        #for ip_src, length in c:
+            #s = pen_width(length)
+            #print >> output, '"%s" [ width = %s pendiwth = %s fontsize = %s ]' % (ip_src, s/2+1, s/3+1, 6+3*s)
 
         c.execute("select distinct(ip_dst) from tmp_packets_multicast")
         print >> output, '{'
-        print >> output, 'node [ shape = "rectangle" label="\N" ]'
+        print >> output, 'node [ shape = "rectangle" label="\N" width="3" ]'
         for ip_dst in c:
             print >> output, '"%s"'  % ip_dst
         print >> output, '}'
@@ -181,7 +181,6 @@ class GraphWriter:
         port_edges = dict()
 
         for ip_src, ip_dst, port_dst, proto, count in rows:
-            print ip_src, "->", ip_dst, ":", port_dst
             key = (min(ip_src, ip_dst), max(ip_src, ip_dst), proto)
             if key not in host_edges:
                 backward = (ip_src != min(ip_src, ip_dst))
