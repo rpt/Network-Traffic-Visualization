@@ -2,85 +2,47 @@
 
 import os
 import sys
-import sqlite3
 import getopt
+import shutil
 
-pages = [
-            ('index', 'Nodes connections (count)', 'nodes-connections-count'),
-            ('nclength', 'Nodes connections (length)', 'nodes-connections-length'),
-            ('multicast', 'IP Multicast', 'ip-multicast-circo')
-        ]
+def index():
+    out = open(dir + '/index.html', 'w')
+    print >> out, '''<html>
+<head>
+    <title>Network-Traffic-Visualisation</title>
+</head>
 
-def svg(filename):
-    print >> out, '<object id="svg" data="' + filename + '.svg" />'
+<link rel="stylesheet" href="htmedia/style.css" type="text/css" />
+<script src="htmedia/jquery-1.4.2.min.js"></script>
+<script src="htmedia/script.js"></script>
 
-def style():
-    print >> out, '<style>'
-    print >> out, '\tdiv#container { text-align: center; }'
-    print >> out, '\tul { padding: 0px; margin: 0px; list-style-type: none; }'
-    print >> out, '\tli { padding: 0px 10px;  display: inline; }'
-    print >> out, '\tobject#svg { height: 90%; }'
-    print >> out, '\th1 { margin: 0px; padding: 0px; }'
-    print >> out, '</style>'
-
-def javascript():
-    print >> out, '<script>'
-    print >> out, 'function click(id){'
-    print >> out, '\tdocument.location = \'ip-\' + id + \'.html\';'
-    print >> out, '}'
-    print >> out, '</script>'
-
-def menu():
-    print >> out, '<ul>'
-    for filename, title, graphname in pages:
-        print >> out, '\t<li><a href="%s.html">%s</a></li>' % (filename, title)
-#    print >> out, '\t<li><a href="javascript:;" onclick="document.getElementById(\'svg\').style.height=">Zoom In</a></li>'
-    print >> out, '</ul>'
-    print >> out, '<hr>'
-
-def info(ip):
-    print >> out, '<h1>' + ip + '</h1>'
-    print >> out, '<a href="javascript: history.go(-1)">back</a>'
-    print >> out, '<hr>'
-
-def header(title, filename):
-    global out
-    out = open(dir + '/' + filename + '.html', 'w')
-    print >> out, '<html>'
-    print >> out, '<head><title>%s</title></head>' % title
-#   print >> out, '<link rel="stylesheet" href="/site_media/style.css" type="text/css" />'
-    style()
-    javascript()
-    print >> out, '<body>'
-    print >> out, '<div id="container">'
-
-def footer():
-    print >> out, '</div>'
-    print >> out, '</body>'
-    print >> out, '</html>'
+<body>
+<div id="container">
+    <div id="menu" class="trans">
+        <ul>
+            <li><a href="javascript:change(\'nodes-connections-count\')">Nodes connections (count)</a></li>
+            <li><a href="javascript:change(\'nodes-connections-length\')">Nodes connections (length)</a></li>
+            <li><a href="javascript:change(\'ip-multicast-circo\')">IP Multicast</a></li>
+        </ul>
+    </div>
+    <div id="zoom" class="trans">
+        <img id="zoom_in" src="htmedia/zoom_in.png" />
+        <img id="zoom_out" src="htmedia/zoom_out.png" />
+    </div>
+    <div id="ip_back"></div>
+    <div id="ip">
+        <div id="ip_stats"></div>
+        <div id="ip_svg_div">
+            <object id="ip_svg" data=""></object>
+        </div>
+    </div>
+    <div id="svg_frame">
+        <object id="svg" data="nodes-connections-count.svg"></object>
+    </div>
+</div>
+</body>
+</html>'''
     out.close()
-
-def create_page(filename, title, graphname):
-    header(title, filename)
-    menu()
-    svg(graphname)
-    footer()
-
-def create_ip_page(ip):
-    header(ip, 'ip-'+ip)
-    info(ip)
-    svg('ip-'+ip)
-    footer()
-
-def create_htdocs(ips):
-    if not os.path.isdir(dir):
-        os.mkdir(dir)
-
-    for filename, title, graphname in pages:
-        create_page(filename, title, graphname)
-
-    for ip in ips:
-        create_ip_page(ip)
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], '', ['database=', 'dir='])
@@ -100,15 +62,13 @@ if not os.path.exists(database):
     print >> sys.stderr, 'No such database file.'
     sys.exit(1)
 
-conn = sqlite3.connect(database)
-c = conn.cursor()
+if not os.path.isdir(dir):
+    os.mkdir(dir)
 
-ips = []
-c.execute("select distinct(ip) from (\
-    select ip_src as ip from tmp_packets_ip_port \
-    union \
-    select ip_dst as ip from tmp_packets_ip_port);")
-for ip in c:
-    ips.append(ip[0])
+if os.path.isdir(dir + '/htmedia'):
+    shutil.rmtree(dir + '/htmedia')
 
-create_htdocs(ips)
+if not os.path.isdir(dir + '/htmedia'):
+    shutil.copytree('htmedia', dir + '/htmedia')
+
+index()
