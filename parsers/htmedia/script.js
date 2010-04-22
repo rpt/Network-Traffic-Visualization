@@ -1,22 +1,22 @@
 function click(id) {
-    $("#ip_stats").text(id);
+    $("#ip_stats").attr("data", "htstats/ip-" + id + ".html");
 
-    if ($("#ip_svg").width() != $("#ip").innerWidth()-20)
-        $("#ip_svg").width($("#ip").innerWidth()-20);
+//    if ($("#ip_svg").width() != $("#ip").innerWidth()-20)
+//        $("#ip_svg").width($("#ip").innerWidth()-20);
 
     if ($("#ip_back").css("display") == "none") {
         $("#ip_back").fadeIn("fast", function() {
             $("#ip").fadeIn("fast");
-            $("#ip_svg").attr("data", "ip-" + id + ".svg");
-            $("#ip_svg_div").fadeIn("slow");
+//            $("#ip_svg").attr("data", "ip-" + id + ".svg");
+//            $("#ip_svg_div").fadeIn("slow");
         });
     }
-    else {
-        $("#ip_svg_div").fadeOut("slow", function() {
-            $("#ip_svg").attr("data", "ip-" + id + ".svg");
-            $("#ip_svg_div").fadeIn("slow");
-        });
-    }
+//    else {
+//        $("#ip_svg_div").fadeOut("slow", function() {
+//            $("#ip_svg").attr("data", "ip-" + id + ".svg");
+//            $("#ip_svg_div").fadeIn("slow");
+//        });
+//    }
 }
 
 function change(graph) {

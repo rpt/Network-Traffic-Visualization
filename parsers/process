@@ -127,11 +127,12 @@ function do_draw_graph {
 function do_draw {
     DB="$1"
     DIR="$(dirname -- ${DB})"
-    ALGO=( dot neato fdp circo twopi )
+#    ALGO=( dot neato fdp circo twopi )
+    ALGO=( dot )
 
     do_draw_graph circo svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-circo.svg"
-    do_draw_graph twopi svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-twopi.svg"
-    do_draw_graph neato svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-neato.svg"
+#    do_draw_graph twopi svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-twopi.svg"
+#    do_draw_graph neato svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-neato.svg"
 
     for algo in ${ALGO[@]} ; do
         # do_draw_graph $algo svg "${DIR}/tmp-mac-ip.gv" "${DIR}/mac-ip-$algo.svg"

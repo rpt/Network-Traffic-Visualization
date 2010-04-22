@@ -28,7 +28,7 @@ Multicast (IPv4)
 -------------|------------|--------------|
  ip_dst      | bytes_sent | packets_sent |
 
-select ip_src, ip_dst, sum(length) as bytes_sent, count(*) as packets_sent from packet_eth_ipv4 where ip_src='172.16.210.253' and is_multicast(ip_dst) group by ip_src, ip_dst;
+select ip_src, ip_dst, sum(length) as bytes_sent, count(*) as packets_sent from packet_eth_ipv4 where ip_src='172.16.210.253' and ip_multicast(ip_dst) group by ip_src, ip_dst;
 
 Broadcast (IPv4)
 
