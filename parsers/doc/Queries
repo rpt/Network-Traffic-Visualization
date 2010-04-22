@@ -8,7 +8,38 @@ Peers (IPv4)
 ----------|-------------|----------|----------|------------|------------|---------------|--------------|
  ip_dst   | trans_proto | port_dst | port_src | bytes_sent | bytes_recv | packets_sent  | packets_recv |
 
-select src.ip_src as ip_src, src.ip_dst as ip_dst, src.port_src as port_src, src.port_dst as port_dst, src.length as bytes_sent, dst.length as bytes_recv, src.count as packets_sent, dst.count as packets_recv from (select ip_src, ip_dst, port_src, port_dst, trans_proto, sum(length) as length, count(*) as count from packet_eth_ipv4 where ip_dst='172.16.210.253' group by ip_src, ip_dst, trans_proto, port_src, port_dst) as dst join (select ip_src, ip_dst, port_src, port_dst, trans_proto, sum(length) as length, count(*) as count from packet_eth_ipv4 where ip_src='172.16.210.253' group by ip_src, ip_dst, trans_proto, port_src, port_dst) as src on (src.ip_src = dst.ip_dst and src.port_src = dst.port_dst and src.port_dst = dst.port_src and src.trans_proto = dst.trans_proto);
+select dst.ip_dst as ip_src, dst.ip_src as ip_dst, dst.trans_proto as trans_proto, dst.port_dst as port_src, dst.port_src as port_dst, src.length as bytes_sent, dst.length as bytes_recv, src.count as packets_sent, dst.count as packets_recv
+from (
+    select ip_src, ip_dst, port_src, port_dst, trans_proto, sum(length) as length, count(*) as count
+    from packet_eth_ipv4
+    where ip_dst=:ip
+    group by ip_src, ip_dst, trans_proto, port_src, port_dst
+) as dst
+left join (
+    select ip_src, ip_dst, port_src, port_dst, trans_proto, sum(length) as length, count(*) as count
+    from packet_eth_ipv4
+    where ip_src=:ip
+    group by ip_src, ip_dst, trans_proto, port_src, port_dst
+) as src
+on (src.ip_src = dst.ip_dst and src.port_src = dst.port_dst and src.port_dst = dst.port_src and src.trans_proto = dst.trans_proto)
+union
+select src.ip_src as ip_src, src.ip_dst as ip_dst, src.trans_proto as trans_proto, src.port_src as port_src, src.port_dst as port_dst, src.length as bytes_sent, dst.length as bytes_recv, src.count as packets_sent, dst.count as packets_recv
+from (
+    select ip_src, ip_dst, port_src, port_dst, trans_proto, sum(length) as length, count(*) as count
+    from packet_eth_ipv4
+    where ip_src=:ip
+    group by ip_src, ip_dst, trans_proto, port_src, port_dst
+) as src
+left join (
+    select ip_src, ip_dst, port_src, port_dst, trans_proto, sum(length) as length, count(*) as count
+    from packet_eth_ipv4
+    where ip_dst=:ip
+    group by ip_src, ip_dst, trans_proto, port_src, port_dst
+) as dst
+on (src.ip_src = dst.ip_dst and src.port_src = dst.port_dst and src.port_dst = dst.port_src and src.trans_proto = dst.trans_proto)
+
+
+
 
 Protocols (IPv4)
 =================
@@ -18,7 +49,35 @@ Protocols (IPv4)
 -------------|------------|------------|---------------|--------------|
  trans_proto | bytes_sent | bytes_recv | packets_sent  | packets_recv |
 
-select src.ip_src as ip_src, src.trans_proto as trans_proto, src.length as bytes_sent, dst.length as bytes_recv, src.count as packets_sent, dst.count as packets_recv from (select ip_dst, trans_proto, sum(length) as length, count(*) as count from packet_eth_ipv4 where ip_dst='172.16.210.253' group by ip_dst, trans_proto) as dst join (select ip_src, trans_proto, sum(length) as length, count(*) as count from packet_eth_ipv4 where ip_src='172.16.210.253' group by ip_src, trans_proto) as src on (src.ip_src = dst.ip_dst and src.trans_proto = dst.trans_proto);
+select dst.ip_dst as ip_src, dst.trans_proto as trans_proto, src.length as bytes_sent, dst.length as bytes_recv, src.count as packets_sent, dst.count as packets_recv
+from (
+	select ip_dst, trans_proto, sum(length) as length, count(*) as count
+	from packet_eth_ipv4
+	where ip_dst=:ip
+	group by ip_dst, trans_proto
+) as dst
+left join (
+	select ip_src, trans_proto, sum(length) as length, count(*) as count
+	from packet_eth_ipv4
+	where ip_src=:ip
+	group by ip_src, trans_proto
+) as src
+on (src.ip_src = dst.ip_dst and src.trans_proto = dst.trans_proto);
+union
+select src.ip_src as ip_src, src.trans_proto as trans_proto, src.length as bytes_sent, dst.length as bytes_recv, src.count as packets_sent, dst.count as packets_recv
+from (
+	select ip_src, trans_proto, sum(length) as length, count(*) as count
+	from packet_eth_ipv4
+	where ip_src=:ip
+	group by ip_src, trans_proto
+) as src
+left join (
+	select ip_dst, trans_proto, sum(length) as length, count(*) as count
+	from packet_eth_ipv4
+	where ip_dst=:ip
+	group by ip_dst, trans_proto
+) as dst
+on (src.ip_src = dst.ip_dst and src.trans_proto = dst.trans_proto);
 
 
 Multicast (IPv4)
@@ -28,7 +87,10 @@ Multicast (IPv4)
 -------------|------------|--------------|
  ip_dst      | bytes_sent | packets_sent |
 
-select ip_src, ip_dst, sum(length) as bytes_sent, count(*) as packets_sent from packet_eth_ipv4 where ip_src='172.16.210.253' and ip_multicast(ip_dst) group by ip_src, ip_dst;
+select ip_src, ip_dst, sum(length) as bytes_sent, count(*) as packets_sent
+from packet_eth_ipv4
+where ip_src=:ip and ip_multicast(ip_dst)
+group by ip_src, ip_dst;
 
 Broadcast (IPv4)
 
@@ -36,4 +98,8 @@ Broadcast (IPv4)
 -------------|------------|--------------|
  ip_dst      | bytes_sent | packets_sent |
 
-select ip_src, ip_dst, sum(length) as bytes_sent, count(*) as packets_sent from packet_eth_ipv4 where ip_src='172.16.210.253' and mac_dst='ff:ff:ff:ff:ff:ff' group by ip_src, ip_dst;
+select ip_src, ip_dst, sum(length) as bytes_sent, count(*) as packets_sent
+from packet_eth_ipv4
+where ip_src=:ip and mac_dst='ff:ff:ff:ff:ff:ff'
+group by ip_src, ip_dst;
+
