@@ -20,13 +20,16 @@ function click(id) {
 }
 
 function change(graph) {
-    $("#svg").attr("data", graph + ".svg")
-}
+	$("#svg").hide();
+	$("#svg").attr("data", graph + ".svg");
 
-//$("#svg").onload = function() {
-//	 $("#svg").height(0.9 * $(window).height());
-//    redraw();
-//};
+	$("#ip_back").fadeIn("fast", function() {
+		$("#svg").show();
+		$("#svg").height(0.9 * $(window).height());
+		redraw();
+		$("#ip_back").fadeOut("fast");
+	});
+}
 
 function redraw() {
 
