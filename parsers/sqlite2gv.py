@@ -98,7 +98,7 @@ class GraphWriter:
 
         print >> output, 'graph foo {'
         print >> output, 'graph [ overlap = "scale" splines = "true" ]'
-        print >> output, 'node [ shape = "circle" label="\N" fixedsize = "true" width="2"  id = "\N" URL = "javascript:top.click(\'\N\')" ]'
+        print >> output, 'node [ shape = "circle" label="\N" fixedsize = "true" width="2"  style = "filled" fillcolor = "white" id = "\N" URL = "javascript:top.click(\'\N\')" ]'
 
         #c.execute("select ip_src, sum(length) as length from tmp_packets_multicast group by ip_src")
         #for ip_src, length in c:
@@ -157,7 +157,7 @@ class GraphWriter:
     def graph_ip_port(self, output):
         print >> output, 'digraph foo {'
         print >> output, 'graph [ rankdir = "LR" overlap = "scale" splines = "true" ];'
-        print >> output, 'node [ id = "\N" URL = "javascript:top.click(\'\N\')" ]'
+        print >> output, 'node [ style = "filled" fillcolor = "white" id = "\N" URL = "javascript:top.click(\'\N\')" ]'
 
         c = self.cursor()
 
