@@ -80,10 +80,10 @@ class GraphWriter:
         # generate edges in graph
         for ip1, ip2, count, length, burst in edges:
 
-            print >> output_count_based, '"%s" -- "%s" [penwidth = %s, color = "%s" URL = "#" tooltip = %s]' \
+            print >> output_count_based, '"%s" -- "%s" [penwidth = %s, color = "%s" tooltip = %s]' \
                 % (ip1, ip2, edge_size_count(count)+1, utilities.temperature(burst), count)
 
-            #print >> output_length_based, '"%s" -- "%s" [penwidth = %s, color = "%s" URL = "#" tooltip = %s]' \
+            #print >> output_length_based, '"%s" -- "%s" [penwidth = %s, color = "%s" tooltip = %s]' \
             #   % (ip1, ip2, edge_size_length(length)+1, utilities.temperature(burst), count)
 
         footer(output_count_based)
@@ -98,7 +98,7 @@ class GraphWriter:
 
         print >> output, 'graph foo {'
         print >> output, 'graph [ overlap = "scale" splines = "true" ]'
-        print >> output, 'node [ shape = "circle" label="\N" fixedsize = "true" width="2" ]'
+        print >> output, 'node [ shape = "circle" label="\N" fixedsize = "true" width="2"  id = "\N" URL = "javascript:top.click(\'\N\')" ]'
 
         #c.execute("select ip_src, sum(length) as length from tmp_packets_multicast group by ip_src")
         #for ip_src, length in c:
@@ -107,7 +107,7 @@ class GraphWriter:
 
         c.execute("select distinct(ip_dst) from tmp_packets_multicast")
         print >> output, '{'
-        print >> output, 'node [ shape = "rectangle" label="\N" width="3" ]'
+        print >> output, 'node [ shape = "rectangle" label="\N" width="3" URL = ""]'
         for ip_dst in c:
             print >> output, '"%s"'  % ip_dst
         print >> output, '}'
@@ -157,6 +157,7 @@ class GraphWriter:
     def graph_ip_port(self, output):
         print >> output, 'digraph foo {'
         print >> output, 'graph [ rankdir = "LR" overlap = "scale" splines = "true" ];'
+        print >> output, 'node [ id = "\N" URL = "javascript:top.click(\'\N\')" ]'
 
         c = self.cursor()
 
@@ -167,7 +168,7 @@ class GraphWriter:
 
         ports  = set(map ((lambda x: (x[2], x[3])), rows))
         for (port_dst, proto) in ports:
-            print >> output, '"%s%s" [ shape = "rectangle" label="%s" ];' % (proto, port_dst, port_dst)
+            print >> output, '"%s%s" [ shape = "rectangle" label="%s" URL = ""];' % (proto, port_dst, port_dst)
 
         host_edges = dict()
         port_edges = dict()
@@ -204,11 +205,11 @@ class GraphWriter:
         pen_width = utilities.pen_selector(10, sorted(counts))
 
         for ((ip_src, ip_dst, proto), (count, dir)) in host_edges.iteritems():
-            print >> output, '"%s" -> "%s" [ color = "%s" penwidth = "%f" dir = "%s" URL="#" caption="%i"];' \
+            print >> output, '"%s" -> "%s" [ color = "%s" penwidth = "%f" dir = "%s" caption="%i"];' \
                 % (ip_src, ip_dst, utilities.color(proto), (pen_width(count)+1), dir, count)
 
         for ((ip_dst, port_dst, proto), (count)) in port_edges.iteritems():
-            print >> output, '"%s" -> "%s%s" [ color = "%s" penwidth = "%f" URL="#" caption="%i"];' \
+            print >> output, '"%s" -> "%s%s" [ color = "%s" penwidth = "%f" caption="%i"];' \
                 % (ip_dst, proto, port_dst, utilities.color(proto), (pen_width(count)+1), count)
 
         print >> output, '}'
