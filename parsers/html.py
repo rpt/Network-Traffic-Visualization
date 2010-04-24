@@ -17,13 +17,11 @@ class HostSummary:
         self.db = db
         self.ip = ip
 
-
     def execute(self, query):
         self.db.row_factory = sqlite3.Row
         c = self.db.cursor()
         c.execute(query, {'ip': self.ip})
         return c
-
 
     def query_peers(self):
         #FIXME: this query is so scary because sqlite doesn't support FULL OUTER JOINS ATM (version 3.6.23.1)
@@ -58,7 +56,6 @@ class HostSummary:
             ) as dst
             on (src.ip_src = dst.ip_dst and src.port_src = dst.port_dst and src.port_dst = dst.port_src and src.trans_proto = dst.trans_proto)'''
     
-
     def query_protocols(self):
         #FIXME: this query is so scary because sqlite doesn't support FULL OUTER JOINS ATM (version 3.6.23.1)
         return '''
@@ -92,7 +89,6 @@ class HostSummary:
             ) as dst
             on (src.ip_src = dst.ip_dst and src.trans_proto = dst.trans_proto)'''
 
-
     def query_multicast(self):
         return '''
             select ip_src, ip_dst, sum(length) as bytes_sent, count(*) as packets_sent
@@ -100,14 +96,12 @@ class HostSummary:
             where ip_src=:ip and ip_multicast(ip_dst)
             group by ip_src, ip_dst'''
 
-
     def query_broadcast(self):
         return '''
             select ip_src, ip_dst, sum(length) as bytes_sent, count(*) as packets_sent
             from packet_eth_ipv4
             where ip_src=:ip and mac_dst='ff:ff:ff:ff:ff:ff'
             group by ip_src, ip_dst'''
-
 
     def make_table(self, output, query, header, content, footer):
         cursor = self.execute(query)
@@ -124,7 +118,6 @@ class HostSummary:
                 print >> output, content % r
         print >> output, footer % common_dict
 
-
     def make_simple_table(self, output, query, title, columns):
         header   = '<h2>' + title + '</h2>\n<table><tr>'
         content  = '<tr>'
@@ -139,7 +132,6 @@ class HostSummary:
         footer = '</table>'
 
         return self.make_table(output, query, header, content, footer)
-
 
     def write(self, output, table):
         if table == self.PEERS_IPV4:
@@ -177,50 +169,6 @@ class HostSummary:
                      ('Bytes Sent',   'bytes_sent'),
                      ('Packets Sent', 'packets_sent')])
 
-
-
-def index():
-    out = open(dir + '/index.html', 'w')
-    print >> out, '''<html>
-<head>
-    <title>Network-Traffic-Visualisation</title>
-</head>
-
-<link rel="stylesheet" href="htmedia/style.css" type="text/css" />
-<script src="htmedia/jquery-1.4.2.min.js"></script>
-<script src="htmedia/script.js"></script>
-
-<body>
-<div id="container">
-    <div id="menu" class="trans">
-        <ul>
-            <li><a href="javascript:change(\'nodes-connections-count\')">Nodes Connections</a></li>
-            <li><a href="javascript:change(\'ip-port-dot\')">Port Utilisation</a></li>
-            <li><a href="javascript:change(\'ip-multicast-circo\')">IP Multicast</a></li>
-        </ul>
-    </div>
-    <div id="zoom" class="trans">
-        <img id="zoom_in" src="htmedia/zoom_in.png" />
-        <img id="zoom_out" src="htmedia/zoom_out.png" />
-    </div>
-    <div id="ip_back"></div>
-    <div id="ip">
-        <object id="ip_stats" data="" type="text/html" height="100%" width="100%"></object> 
-        <!--
-        <div id="ip_stats" src="http://onet.pl"></div>
-        <div id="ip_svg_div">
-            <object id="ip_svg" data=""></object>
-        </div>
-        -->
-    </div>
-    <div id="svg_frame">
-        <object id="svg" data="nodes-connections-count.svg"></object>
-    </div>
-</div>
-</body>
-</html>'''
-    out.close()
-
 try:
     opts, args = getopt.getopt(sys.argv[1:], '', ['database=', 'dir='])
 except getopt.GetoptError, err:
@@ -244,9 +192,9 @@ c = conn.cursor()
 
 ips = []
 c.execute("select distinct(ip) from (\
-    select ip_src as ip from tmp_packets_ip_port \
+    select ip_src as ip from packets_eth_ipv4 \
     union \
-    select ip_dst as ip from tmp_packets_ip_port);")
+    select ip_dst as ip from packets_eth_ipv4);")
 for ip in c:
     ips.append(ip[0])
 
@@ -281,4 +229,4 @@ if os.path.isdir(dir + '/htmedia'):
 if not os.path.isdir(dir + '/htmedia'):
     shutil.copytree('htmedia', dir + '/htmedia')
 
-index()
+shutil.copy('htdoc/index.html', dir)
