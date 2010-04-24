@@ -1,0 +1,32 @@
+<html>
+<head>
+    <title>Network-Traffic-Visualisation</title>
+</head>
+
+<link rel="stylesheet" href="htmedia/style.css" type="text/css" />
+<script src="htmedia/jquery-1.4.2.min.js"></script>
+<script src="htmedia/script.js"></script>
+
+<body>
+<div id="container">
+    <div id="menu" class="trans">
+        <ul>
+            <li><a href="javascript:change(\'nodes-connections-count\')">Nodes Connections</a></li>
+            <li><a href="javascript:change(\'ip-port-dot\')">Port Utilisation</a></li>
+            <li><a href="javascript:change(\'ip-multicast-circo\')">IP Multicast</a></li>
+        </ul>
+    </div>
+    <div id="zoom" class="trans">
+        <img id="zoom_in" src="htmedia/zoom_in.png" />
+        <img id="zoom_out" src="htmedia/zoom_out.png" />
+    </div>
+    <div id="ip_back"></div>
+    <div id="ip">
+        <object id="ip_stats" data="" type="text/html" height="100%" width="100%"></object> 
+    </div>
+    <div id="svg_frame">
+        <object id="svg" data="nodes-connections-count.svg"></object>
+    </div>
+</div>
+</body>
+</html>
