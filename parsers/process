@@ -163,15 +163,17 @@ function do_draw {
 	DB="$1"
 	DIR="$(dirname -- ${DB})"
 
-	do_draw_graph circo svg "${DIR}/tmp-ip-multicast.gv"            "${DIR}/ip-multicast-circo.svg"
-	do_draw_graph dot   svg "${DIR}/tmp-ip-port.gv"                 "${DIR}/ip-port-$algo.svg"
-	do_draw_graph twopi svg "${DIR}/tmp-nodes-connections-count.gv" "${DIR}/nodes-connections-count.svg"
+	do_draw_graph circo svg "${DIR}/tmp-ip-multicast.gv"            "${DIR}/ip-multicast.svg"
+	do_draw_graph dot   svg "${DIR}/tmp-ip-port.gv"                 "${DIR}/ip-port.svg"
+	do_draw_graph twopi svg "${DIR}/tmp-nodes-connections-count.gv" "${DIR}/nodes-connections.svg"
 }
 
 function do_html {
+	echo -n "Generating HTML... "
 	DB="$1"
 	DIR="$(dirname -- ${DB})"
 	./html.py --database "${DB}" --dir "${DIR}"
+	echo "done."
 }
 
 function do_foreach_database {

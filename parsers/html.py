@@ -192,9 +192,9 @@ c = conn.cursor()
 
 ips = []
 c.execute("select distinct(ip) from (\
-    select ip_src as ip from packets_eth_ipv4 \
+    select ip_src as ip from packet_eth_ipv4 \
     union \
-    select ip_dst as ip from packets_eth_ipv4);")
+    select ip_dst as ip from packet_eth_ipv4);")
 for ip in c:
     ips.append(ip[0])
 
@@ -229,4 +229,4 @@ if os.path.isdir(dir + '/htmedia'):
 if not os.path.isdir(dir + '/htmedia'):
     shutil.copytree('htmedia', dir + '/htmedia')
 
-shutil.copy('htdoc/index.html', dir)
+shutil.copy('htdocs/index.html', dir)
