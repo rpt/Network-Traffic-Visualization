@@ -1,11 +1,31 @@
 #!/bin/sh
 
+#
+# Configuration:
+#
+
+# How long to wait for graphviz to plot a graph (in seconds)
+#  After this period plotting is attempted once again with simpler graph layout
+#  algorithm (dot) and if that also fail, no output is generated.
+#  NOTE: It is normal for large graphs to take a lot of time so set it
+#  according to your needs.
+DRAWING_TIME_OUT=10
+
+# Path to tcpdump binnary
 TCPDUMP=/usr/sbin/tcpdump
+
+# Path to parser (taking tcpdump output and storing output in database)
 PARSER="./tcpdump2sqlite.pl -q"
+
+# Path to sqlite binary
 SQLITE=sqlite3
+
+# Database schema
 DB_SCHEMA=../database/schema.sql
 
-DRAWING_TIME_OUT=10
+####################################
+# No more configuration variables. #
+####################################
 
 cleanflag=off
 mergeflag=off
@@ -15,12 +35,27 @@ databaseflag=off
 htmlflag=off
 
 function usage {
-	echo >&2  "usage: $0 [--merge] file [file ...]"
-	echo >&2  "       $0 --db [--merge] file [file ...]"
-	echo >&2  "       $0 --graphs"
-	echo >&2  "       $0 --draw"
-	echo >&2  "       $0 --html"
+	echo >&2  "Usage: $0 --db [--merge] file [file ...]"
+	echo >&2  "       $0 <action ...> [database ...]"
 	echo >&2  "       $0 --clean"
+	echo >&2  ""
+	echo >&2  "Actions:"
+	echo >&2  "    --db     - create database from libpcap capture file"
+	echo >&2  "    --graphs - use database to generate GraphViz graphs"
+	echo >&2  "    --draw   - render graphs into svg files"
+	echo >&2  "    --html   - create html pages"
+	echo >&2  "    --clean  - remove all generated files"
+	echo >&2  ""
+	echo >&2  "Options:"
+	echo >&2  "    --merge  - normally if you supply several capture files"
+	echo >&2  "               seperate database is generated for each,"
+	echo >&2  "               with this option only one databse is created"
+	echo >&2  ""
+	echo >&2  "By default --graphs --draw --html is assumed. If you don't supply"
+	echo >&2  "any input, every 'packets.db' file found under 'output' directory"
+	echo >&2  "is used"
+	echo >&2  ""
+	echo >&2  "Note, you cannot mix --db nor --clean with other actions."
 }
 
 function do_clean {
@@ -72,7 +107,7 @@ function do_database {
 
 			echo "done."
 		done
-        do_database_aux_tables "${DB}"
+		do_database_aux_tables "${DB}"
 
 	else
 		for dump in ${@}; do
@@ -90,7 +125,7 @@ function do_database {
 
 				${TCPDUMP} -vttttnel -r "${dump}" 2>/dev/null |\
 				${PARSER} "${DB}"
-                do_database_aux_tables "${DB}"
+				do_database_aux_tables "${DB}"
 				echo "done."
 			fi
 		done
@@ -125,28 +160,18 @@ function do_draw_graph {
 }
 
 function do_draw {
-    DB="$1"
-    DIR="$(dirname -- ${DB})"
-#    ALGO=( dot neato fdp circo twopi )
-    ALGO=( dot )
+	DB="$1"
+	DIR="$(dirname -- ${DB})"
 
-    do_draw_graph circo svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-circo.svg"
-#    do_draw_graph twopi svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-twopi.svg"
-#    do_draw_graph neato svg "${DIR}/tmp-ip-multicast.gv" "${DIR}/ip-multicast-neato.svg"
-
-    for algo in ${ALGO[@]} ; do
-        # do_draw_graph $algo svg "${DIR}/tmp-mac-ip.gv" "${DIR}/mac-ip-$algo.svg"
-        do_draw_graph $algo svg "${DIR}/tmp-ip-port.gv" "${DIR}/ip-port-$algo.svg"
-    done
-
-    do_draw_graph twopi svg "${DIR}/tmp-nodes-connections-count.gv" "${DIR}/nodes-connections-count.svg"
-    # do_draw_graph twopi svg "${DIR}/tmp-nodes-connections-length.gv" "${DIR}/nodes-connections-length.svg"
+	do_draw_graph circo svg "${DIR}/tmp-ip-multicast.gv"            "${DIR}/ip-multicast-circo.svg"
+	do_draw_graph dot   svg "${DIR}/tmp-ip-port.gv"                 "${DIR}/ip-port-$algo.svg"
+	do_draw_graph twopi svg "${DIR}/tmp-nodes-connections-count.gv" "${DIR}/nodes-connections-count.svg"
 }
 
 function do_html {
-    DB="$1"
-    DIR="$(dirname -- ${DB})"
-    ./html.py --database "${DB}" --dir "${DIR}"
+	DB="$1"
+	DIR="$(dirname -- ${DB})"
+	./html.py --database "${DB}" --dir "${DIR}"
 }
 
 function do_foreach_database {
@@ -187,8 +212,14 @@ while [ $# -gt 0 ]; do
 	shift
 done
 
+if ( [ "$databaseflag" == "on" ] || [ "$cleanflag" == "on" ] ) &&
+   ( [ "$graphsflag" == "on" ] || [ "$drawflag" == "on" ] || [ "$htmlflag" == "on" ] ); then
+	echo >&2  "Error, you cannot mix --db nor --clean with other actions."
+	usage
+	exit 1
+fi
+
 if [ "$graphsflag" == "off" ] && [ "$databaseflag" == "off" ] && [ "$drawflag" == "off" ] && [ "$htmlflag" == "off" ]; then
-	databaseflag=on
 	graphsflag=on
 	drawflag=on
 	htmlflag=on
