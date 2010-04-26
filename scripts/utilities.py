@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+#
+# This file contains utility functions for other python scripts.
+#
+
 from datetime import datetime
 import math
 import sqlite3

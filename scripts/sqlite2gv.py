@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 
+#
+# This script is responsible for generating GraphViz's input files from data
+# stored in database passed as argument on the command line.
+#
+# It is run by ./process
+#
+
+
 import sys
 import os
 import getopt

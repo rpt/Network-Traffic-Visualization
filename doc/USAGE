@@ -1,0 +1,61 @@
+This set of scripts can be used to generate visualization of network traffic
+captured with tcpdump.
+
+Introduction
+=============
+
+The flow of data is as follows. First you run tcpdump and record packets in a
+file. You can also use wireshark or any other program that can save packets in
+libpcap format.
+
+This capture is then parsed by tcpdump2sqlite.pl and data we're interested in
+is stored in a sqlite database. Now we don't need capture file anymore and
+everything is now accessible through SQLite.
+
+We use GraphViz to plot all graphs so first sqlite2gv.py generate input files
+for GraphViz. These files contain graphs' definition and additional
+visualization attributes.
+
+Later we use GraphViz (dot, circo and twopi) to create SVG images from
+generated graphs.
+
+In the end, html.py script generates index.html and other HTML files so you can
+easily browse all produced output.
+
+Usage
+======
+
+To simplify the process described above, you should use 'process', a simple
+shell script running all needed commands in the right order. So actually
+executed commands will be as follows:
+
+  tcpdump -s 0 -w capture.pcap
+
+The -s 0 option tells tcpdump to save all packet so no information is lost. Of
+course you will probably need more options to suit it to your needs. Be aware
+that GraphViz needs a lot of time to layout big graphs so limit the size of
+capture somehow. For example, if you want continuous monitoring of your
+traffic-intense network and you capture data for an hour, you may find later
+that generating graphs would take even more time, so you won't be ready to
+visualize next portion of data the next hour.
+
+To parse the dump and produce database you run:
+
+  cd scripts
+  ./process --db capture.pcap
+
+Now in currect working directory you'll find 'output/capture.pcap/packets.db'
+this is the SQLite database.
+
+  ./process
+
+The ./process script run with no arguments searches for all 'packets.db' under
+current directory and runs all needed actions, this is equivalent to doing
+this:
+
+  ./process --graphs output/capture.pcap/packets.db
+  ./process --draw   output/capture.pcap/packets.db
+  ./process --html   output/capture.pcap/packets.db
+
+You can now open output/capture.pcap/index.html and view results.
+

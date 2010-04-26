@@ -1,5 +1,22 @@
 #!/usr/bin/env perl
 
+#
+# This script takes libpcap capture file, turns it into text format using
+# tcpdump and then parses the results.
+#
+# Since tcpdump output may change, an attempt has been made to create some DSL
+# to write needed regular expressions in fast and easy way.
+#
+# It worked for our needs but feel free to rewrite it the way you like it ;-)
+#
+# The most interesing part is the
+#     my $parser_4_1 = sub {
+# line. And of course entry point at
+#     main:
+# Starting from there you should be able to find references to other
+# subroutines and this way it is easier to understand this functions.
+# 
+
 use DBI;
 use strict;
 
@@ -20,7 +37,6 @@ sub store_in_database
 	my $c = join(", ", map {$dbh->quote_identifier($_)} keys %captured);
 	my $v = join(", ", map {$dbh->quote(lc($_))}        values %captured);
 
-	#print("insert into $store_table ($c) values ($v)\n");
 	$dbh->do("insert into $store_table ($c) values ($v)");
 	if ($dbh->err()) { 
 		print STDERR ("insert into $store_table ($c) values ($v)\n");
@@ -161,7 +177,6 @@ my $parser_4_1 = sub {
 			ignore_rest;
 		}};
 	}};
-	#warn_and_ignore_rest;
 	ignore_rest;
 };
 

@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+#
+# This script generates HTML files needed for easy browsing of graphs and also
+# presenting detailed statistics about individual hosts.
+#
+
 import os
 import sys
 import getopt

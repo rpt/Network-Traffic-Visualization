@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+# This script is run by ./process to supplement database with some constant
+# data that will later speed up most queries used by ./sqlite2gv.py
+#
+# It is written in python because it uses some user defined (i.e. not built
+# into SQLite) functions
+
 import utilities
 import getopt
 import sys
