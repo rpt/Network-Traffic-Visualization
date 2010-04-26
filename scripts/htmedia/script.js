@@ -1,22 +1,11 @@
 function click(id) {
     $("#ip_stats").attr("data", "htstats/ip-" + id + ".html");
 
-//    if ($("#ip_svg").width() != $("#ip").innerWidth()-20)
-//        $("#ip_svg").width($("#ip").innerWidth()-20);
-
     if ($("#ip_back").css("display") == "none") {
         $("#ip_back").fadeIn("fast", function() {
             $("#ip").fadeIn("fast");
-//            $("#ip_svg").attr("data", "ip-" + id + ".svg");
-//            $("#ip_svg_div").fadeIn("slow");
-        });
+       });
     }
-//    else {
-//        $("#ip_svg_div").fadeOut("slow", function() {
-//            $("#ip_svg").attr("data", "ip-" + id + ".svg");
-//            $("#ip_svg_div").fadeIn("slow");
-//        });
-//    }
 }
 
 function change(graph) {
@@ -25,18 +14,29 @@ function change(graph) {
 
 	$("#ip_back").fadeIn("fast", function() {
 		$("#svg").show();
-		$("#svg").height(0.9 * $(window).height());
+		resize();
 		redraw();
 		$("#ip_back").fadeOut("fast");
 	});
+}
+
+function resize() {
+	window_aspect = $(window).width() / $(window).height();
+	svg_aspect = $("#svg").width() / $("#svg").height();
+
+	if ( window_aspect < svg_aspect || svg_aspect < 0.4 ) {
+		tmp_height = 0.9 * $(window).width() / svg_aspect;
+		$("#svg").height(tmp_height);
+	}
+	else {
+		$("#svg").height(0.9 * $(window).height());
+	}
 }
 
 function redraw() {
 
     width = $("#svg").width();
     height = $("#svg").height();
-
- //   alert(height);
 
     if ( height <= $(window).height() ) {
         $("#svg").css("top", "50%");
@@ -59,8 +59,8 @@ function redraw() {
 
 $(document).ready(function() {
 
-    $("#svg").height(0.9 * $(window).height());
-    redraw();
+	resize();
+	redraw();
 
     $("#zoom_in").click(function() {
         $("#svg").height(2 * $("#svg").height());
